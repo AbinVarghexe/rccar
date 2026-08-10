@@ -906,17 +906,20 @@ function motor(c){
     ctx.clearRect(0,0,SZ,SZ);
     var mag=Math.hypot(nx,ny),on=pid!==null;
 
-    // Base track fill - Pure White Base
+    // Minimalist Pure White Base Track
+    ctx.shadowColor='rgba(0,0,0,0.06)';
+    ctx.shadowBlur=16;
     ctx.beginPath();ctx.arc(CX,CY,OR,0,Math.PI*2);
     ctx.fillStyle='#FFFFFF';ctx.fill();
+    ctx.shadowBlur=0;
 
-    // Track ring
+    // Outer Track Ring Border
     ctx.beginPath();ctx.arc(CX,CY,OR,0,Math.PI*2);
     ctx.strokeStyle=on?'#1C1C1E':'#E5E5EA';
     ctx.lineWidth=on?2.5:1.5;ctx.stroke();
 
-    // Inner tick marks
-    ctx.strokeStyle='rgba(0,0,0,.08)';ctx.lineWidth=1;
+    // Subtle Cardinal Tick Marks
+    ctx.strokeStyle='rgba(0,0,0,0.08)';ctx.lineWidth=1;
     for(var i=0;i<8;i++){
       var a=i*Math.PI/4;
       var ix=CX+Math.cos(a)*(OR-10),iy=CY+Math.sin(a)*(OR-10);
@@ -924,28 +927,27 @@ function motor(c){
       ctx.beginPath();ctx.moveTo(ix,iy);ctx.lineTo(ox,oy);ctx.stroke();
     }
 
-    // Cross-hair
-    ctx.strokeStyle='rgba(0,0,0,.08)';ctx.lineWidth=1;
+    // Cross-hair Center Guidelines
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;
     ctx.beginPath();
-    ctx.moveTo(CX-OR+8,CY);ctx.lineTo(CX+OR-8,CY);
-    ctx.moveTo(CX,CY-OR+8);ctx.lineTo(CX,CY+OR-8);
+    ctx.moveTo(CX-OR+10,CY);ctx.lineTo(CX+OR-10,CY);
+    ctx.moveTo(CX,CY-OR+10);ctx.lineTo(CX,CY+OR-10);
     ctx.stroke();
 
-    // Direction line
+    // Vector Motion Line
     if(mag>0.04){
       ctx.beginPath();ctx.moveTo(CX,CY);ctx.lineTo(kx,ky);
       ctx.strokeStyle='#1C1C1E';
       ctx.lineWidth=2.5;ctx.stroke();
     }
 
-    // Knob shadow
-    ctx.shadowColor='rgba(0,0,0,.15)';
-    ctx.shadowBlur=on?12:4;
+    // Floating 3D Metallic Thumbstick Knob
+    ctx.shadowColor='rgba(0,0,0,0.18)';
+    ctx.shadowBlur=on?14:6;
 
-    // Knob body - White Metallic Gradient
     var kg=ctx.createRadialGradient(kx-8,ky-8,2,kx,ky,KR);
     kg.addColorStop(0,'#FFFFFF');
-    kg.addColorStop(1,'#F2F2F7');
+    kg.addColorStop(1,'#E5E5EA');
 
     ctx.beginPath();ctx.arc(kx,ky,KR,0,Math.PI*2);
     ctx.fillStyle=kg;ctx.fill();
@@ -953,7 +955,7 @@ function motor(c){
     ctx.strokeStyle='#1C1C1E';
     ctx.lineWidth=2;ctx.stroke();
 
-    // Center Black Pip
+    // Center Pip Indicator
     ctx.beginPath();ctx.arc(kx,ky,5,0,Math.PI*2);
     ctx.fillStyle='#1C1C1E';ctx.fill();
   }
