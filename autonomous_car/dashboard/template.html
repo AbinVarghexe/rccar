@@ -79,7 +79,7 @@ body{
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 16px 10px;
-  max-width:900px;margin:0 auto;
+  max-width:1240px;margin:0 auto;
 }
 .topbar-left{display:flex;align-items:center;gap:10px;}
 .app-icon{
@@ -100,15 +100,15 @@ body{
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 
 /* ─────────────────────────────────────────────────────────────
-   DESKTOP GRID
+   DESKTOP GRID (FULL SCREEN SPACE UTILIZATION)
 ───────────────────────────────────────────────────────────── */
 .layout{
   display:grid;
-  grid-template-columns:1.5fr 1fr;
+  grid-template-columns:1.4fr 1fr;
   grid-template-rows:auto auto auto;
-  gap:12px;
-  padding:0 12px 24px;
-  max-width:900px;margin:0 auto;
+  gap:16px;
+  padding:0 16px 28px;
+  max-width:1240px;margin:0 auto;
 }
 .a-cam   {grid-column:1;grid-row:1/3;}
 .a-stat  {grid-column:2;grid-row:1;}
@@ -116,19 +116,19 @@ body{
 .a-ctrl  {grid-column:1/-1;grid-row:3;}
 
 /* ─────────────────────────────────────────────────────────────
-   MOBILE OVERRIDES
+   MOBILE OVERRIDES (SERVO CONTROL & MEDIA SAVE ENABLED)
 ───────────────────────────────────────────────────────────── */
 @media(max-width:680px){
   .layout{
     grid-template-columns:1fr;
     grid-template-rows:auto;
     padding:0 12px 32px;
-    gap:10px;
+    gap:12px;
   }
-  /* reset all area placements */
+  /* Reset all area placements for clean single column flow */
   .a-cam,.a-stat,.a-servo,.a-ctrl{grid-column:1;grid-row:auto;}
-  /* hide desktop-only panels on mobile */
-  .a-stat,.a-servo,.desktop-only{display:none !important;}
+  /* Ensure Servo Motor Control and Telemetry are fully visible on mobile */
+  .a-stat,.a-servo{display:block !important;}
 }
 
 /* ─────────────────────────────────────────────────────────────
