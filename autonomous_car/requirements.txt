@@ -1,0 +1,7 @@
+# Lightweight Requirements for Autonomous RC Car
+# Install system packages via apt on Raspberry Pi OS for fast, zero-overhead execution:
+# sudo apt install -y python3-opencv python3-numpy python3-pyserial python3-flask python3-picamera2 python3-rpi.gpio
+
+flask>=3.0.0
+pyserial>=3.5
+numpy>=1.24.0
