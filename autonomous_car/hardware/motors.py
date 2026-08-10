@@ -26,8 +26,7 @@ except ImportError:
 
 class MotorController:
     """
-    4-wheel RC car motor controller with inverted steering orientation
-    matching physical wheel wiring.
+    4-wheel RC car motor controller with natural 360° proportional tank-mix steering.
     """
 
     PWM_FREQ: int = 100  # 100 Hz software PWM
@@ -121,15 +120,15 @@ class MotorController:
     def left(self, speed: float = 80.0) -> None:
         spd = max(0.0, min(100.0, speed))
         print(f">>> MOTOR: LEFT {spd:.0f}%")
-        # Left side forward (IN2), Right side reverse (IN3) -> Turn LEFT
-        self._set_duties(0.0, spd, spd, 0.0)
+        # Left side reverse (IN1), Right side forward (IN4) -> Spin LEFT
+        self._set_duties(spd, 0.0, 0.0, spd)
         self._reset_watchdog()
 
     def right(self, speed: float = 80.0) -> None:
         spd = max(0.0, min(100.0, speed))
         print(f">>> MOTOR: RIGHT {spd:.0f}%")
-        # Left side reverse (IN1), Right side forward (IN4) -> Turn RIGHT
-        self._set_duties(spd, 0.0, 0.0, spd)
+        # Left side forward (IN2), Right side reverse (IN3) -> Spin RIGHT
+        self._set_duties(0.0, spd, spd, 0.0)
         self._reset_watchdog()
 
     def stop(self) -> None:
@@ -140,7 +139,7 @@ class MotorController:
 
     def drive(self, throttle: float, steering: float) -> str:
         """
-        True 360° proportional tank-mix drive with inverted steering orientation.
+        True 360° proportional tank-mix drive.
         throttle: -1.0 (full reverse) to +1.0 (full forward)
         steering: -1.0 (full left) to +1.0 (full right)
         """
@@ -152,14 +151,11 @@ class MotorController:
             self.stop()
             return "STOPPED"
 
-        # Invert steering sign to match physical wiring orientation
-        effective_steering = -steering
-
-        # Tank-mix formula:
-        # Pushing joystick LEFT (-x) -> effective_steering > 0 -> left_speed > right_speed -> Left wheel forward, Right wheel reverse -> Turns LEFT
-        # Pushing joystick RIGHT (+x) -> effective_steering < 0 -> right_speed > left_speed -> Right wheel forward, Left wheel reverse -> Turns RIGHT
-        left_speed = throttle + effective_steering
-        right_speed = throttle - effective_steering
+        # Standard Differential Steering:
+        # Steering LEFT (-x): Right motor speeds up forward, Left motor slows down/reverses -> Turns LEFT
+        # Steering RIGHT (+x): Left motor speeds up forward, Right motor slows down/reverses -> Turns RIGHT
+        left_speed = throttle + steering
+        right_speed = throttle - steering
 
         # Normalize so neither exceeds ±1.0
         max_val = max(abs(left_speed), abs(right_speed), 1.0)
