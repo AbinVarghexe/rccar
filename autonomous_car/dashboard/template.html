@@ -116,7 +116,7 @@ body{
 .a-ctrl  {grid-column:1/-1;grid-row:3;}
 
 /* ─────────────────────────────────────────────────────────────
-   MOBILE OVERRIDES (ANALOG CONTROLLER BELOW LIVE FEED, ABOVE STATUS)
+   MOBILE OVERRIDES (EXACT ORDER: CAM -> JOYSTICK -> ACTIONS -> SERVO -> GALLERY)
 ───────────────────────────────────────────────────────────── */
 @media(max-width:680px){
   .layout{
@@ -125,10 +125,11 @@ body{
     padding: 0 12px 32px;
     gap: 12px;
   }
-  .a-cam   { order: 1; }
-  .a-ctrl  { order: 2; }
-  .a-stat  { order: 3; display: block !important; }
-  .a-servo { order: 4; display: block !important; }
+  .a-cam       { order: 1; }
+  .a-ctrl      { order: 2; }
+  .a-stat      { display: none !important; }
+  .a-servo     { display: none !important; }
+  .mobile-dock { order: 3; display: flex; }
 }
 
 /* ─────────────────────────────────────────────────────────────
