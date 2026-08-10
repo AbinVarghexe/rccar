@@ -116,19 +116,19 @@ body{
 .a-ctrl  {grid-column:1/-1;grid-row:3;}
 
 /* ─────────────────────────────────────────────────────────────
-   MOBILE OVERRIDES (SERVO CONTROL & MEDIA SAVE ENABLED)
+   MOBILE OVERRIDES (ANALOG CONTROLLER BELOW LIVE FEED, ABOVE STATUS)
 ───────────────────────────────────────────────────────────── */
 @media(max-width:680px){
   .layout{
-    grid-template-columns:1fr;
-    grid-template-rows:auto;
-    padding:0 12px 32px;
-    gap:12px;
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px 32px;
+    gap: 12px;
   }
-  /* Reset all area placements for clean single column flow */
-  .a-cam,.a-stat,.a-servo,.a-ctrl{grid-column:1;grid-row:auto;}
-  /* Ensure Servo Motor Control and Telemetry are fully visible on mobile */
-  .a-stat,.a-servo{display:block !important;}
+  .a-cam   { order: 1; }
+  .a-ctrl  { order: 2; }
+  .a-stat  { order: 3; display: block !important; }
+  .a-servo { order: 4; display: block !important; }
 }
 
 /* ─────────────────────────────────────────────────────────────
