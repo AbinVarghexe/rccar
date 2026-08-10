@@ -426,7 +426,14 @@ input[type=range]::-moz-range-thumb{
 <!-- ── STATUS BAR ── -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="app-icon">🚗</div>
+    <div class="app-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+        <circle cx="7" cy="17" r="2"/>
+        <path d="M9 17h6"/>
+        <circle cx="17" cy="17" r="2"/>
+      </svg>
+    </div>
     <div>
       <div class="app-name">RC Car</div>
       <div class="app-sub">Raspberry Pi 3 &bull; Dashboard</div>
@@ -524,15 +531,23 @@ input[type=range]::-moz-range-thumb{
       </div>
       <!-- Desktop capture buttons under dpad -->
       <div class="cap-row" style="margin-top:8px;">
-        <button class="btn-cap btn-photo" onclick="capturePhoto()">&#128248; Photo</button>
+        <button class="btn-cap btn-photo" onclick="capturePhoto()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Photo
+        </button>
         <button class="btn-cap btn-video" id="btn-vid" onclick="toggleVideo()">
-          <span id="vid-ico">&#9654;</span>&nbsp;<span id="vid-lbl">Record</span>
+          <span id="vid-ico">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </span>&nbsp;<span id="vid-lbl">Record</span>
         </button>
       </div>
       <div class="rec-bar" id="rec-bar"><div class="rec-bar-dot"></div><span id="rec-t">00:00</span></div>
       <div class="cap-msg" id="cap-msg">Ready</div>
       <div class="gallery-wrap">
-        <div class="gallery-hd">&#128247; Gallery</div>
+        <div class="gallery-hd" style="display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Gallery
+        </div>
         <div class="gallery" id="gallery"><div class="g-empty">No captures yet</div></div>
       </div>
     </div>
@@ -551,12 +566,20 @@ input[type=range]::-moz-range-thumb{
     <!-- CAPTURE (desktop right column) -->
     <div class="cap-section desktop-only">
       <div class="lbl"><div class="lbl-dot"></div>Capture</div>
-      <button class="btn-stop" onclick="rel()">&#9632;&ensp;STOP</button>
+      <button class="btn-stop" onclick="rel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        STOP
+      </button>
       <div style="height:4px"></div>
       <div class="cap-row">
-        <button class="btn-cap btn-photo" onclick="capturePhoto()">&#128248; Photo</button>
+        <button class="btn-cap btn-photo" onclick="capturePhoto()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Photo
+        </button>
         <button class="btn-cap btn-video" id="btn-vid2" onclick="toggleVideo()">
-          <span id="vid-ico2">&#9654;</span>&nbsp;<span id="vid-lbl2">Record</span>
+          <span id="vid-ico2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </span>&nbsp;<span id="vid-lbl2">Record</span>
         </button>
       </div>
       <div class="rec-bar" id="rec-bar2"><div class="rec-bar-dot"></div><span id="rec-t2">00:00</span></div>
@@ -570,13 +593,21 @@ input[type=range]::-moz-range-thumb{
 <!-- ── MOBILE DOCK (below joystick on mobile) ── -->
 <div class="mobile-dock">
   <!-- 1. STOP -->
-  <button class="btn-stop" onclick="rel()">&#9632;&ensp;STOP</button>
+  <button class="btn-stop" onclick="rel()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+    STOP
+  </button>
 
   <!-- 2. Photo + Video Buttons -->
   <div class="cap-row">
-    <button class="btn-cap btn-photo" onclick="capturePhoto()">&#128248;&nbsp;Photo</button>
+    <button class="btn-cap btn-photo" onclick="capturePhoto()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Photo
+    </button>
     <button class="btn-cap btn-video" id="btn-vid-m" onclick="toggleVideo()">
-      <span id="vid-ico-m">&#9654;</span>&nbsp;<span id="vid-lbl-m">Record</span>
+      <span id="vid-ico-m">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </span>&nbsp;<span id="vid-lbl-m">Record</span>
     </button>
   </div>
   <div class="rec-bar" id="rec-bar-m"><div class="rec-bar-dot"></div><span id="rec-t-m">00:00</span></div>
@@ -604,7 +635,10 @@ input[type=range]::-moz-range-thumb{
 
   <!-- 4. Mobile Saved Media Gallery (below Servo Pan mode section) -->
   <div class="card" style="padding:14px;margin-top:4px;">
-    <div class="gallery-hd">&#128247; Saved Media Gallery</div>
+    <div class="gallery-hd" style="display:flex;align-items:center;gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Saved Media Gallery
+    </div>
     <div class="gallery" id="gallery-m"><div class="g-empty">No captures yet</div></div>
   </div>
 </div>
@@ -880,12 +914,14 @@ function _setVidUI(on){
     ['btn-vid2','vid-ico2','vid-lbl2'],
     ['btn-vid-m','vid-ico-m','vid-lbl-m'],
   ];
+  var recordSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>';
+  var stopSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>';
   btns.forEach(function(ids){
     var b=document.getElementById(ids[0]);
     var i=document.getElementById(ids[1]);
     var l=document.getElementById(ids[2]);
     if(b){if(on)b.classList.add('recording');else b.classList.remove('recording');}
-    if(i)i.innerHTML=on?'&#9632;':'&#9654;';
+    if(i)i.innerHTML=on?stopSvg:recordSvg;
     if(l)l.textContent=on?'Stop':'Record';
   });
   ['rec-bar','rec-bar2','rec-bar-m'].forEach(function(id){
