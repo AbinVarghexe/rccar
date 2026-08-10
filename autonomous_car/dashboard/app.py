@@ -746,10 +746,10 @@ input[type=range]::-moz-range-thumb{
 
 <!-- ── MOBILE DOCK (below joystick on mobile) ── -->
 <div class="mobile-dock">
-  <!-- 3. STOP -->
+  <!-- 1. STOP -->
   <button class="btn-stop" onclick="rel()">&#9632;&ensp;STOP</button>
 
-  <!-- 4 + 5. Photo + Video -->
+  <!-- 2. Photo + Video Buttons -->
   <div class="cap-row">
     <button class="btn-cap btn-photo" onclick="capturePhoto()">&#128248;&nbsp;Photo</button>
     <button class="btn-cap btn-video" id="btn-vid-m" onclick="toggleVideo()">
@@ -758,6 +758,32 @@ input[type=range]::-moz-range-thumb{
   </div>
   <div class="rec-bar" id="rec-bar-m"><div class="rec-bar-dot"></div><span id="rec-t-m">00:00</span></div>
   <div class="cap-msg" id="cap-msg-m">Ready</div>
+
+  <!-- 3. Mobile Servo Pan Mode Control Panel -->
+  <div class="card" style="padding:14px;margin-top:4px;">
+    <div class="lbl"><div class="lbl-dot"></div>Servo Pan Mode &mdash; GPIO 12</div>
+    <div class="sv-top">
+      <div>
+        <div class="sv-num"><span id="sdeg-m">90</span><sup>°</sup></div>
+        <div class="sv-lbl">Pan Angle</div>
+      </div>
+    </div>
+    <input type="range" id="sl-m" min="0" max="180" value="90"
+           oninput="setServo(this.value)" style="--pct:50%">
+    <div class="sv-btns">
+      <button class="sv-btn" onclick="setServo(0)">0°</button>
+      <button class="sv-btn" onclick="setServo(45)">45°</button>
+      <button class="sv-btn" onclick="setServo(90)">Center</button>
+      <button class="sv-btn" onclick="setServo(135)">135°</button>
+      <button class="sv-btn" onclick="setServo(180)">180°</button>
+    </div>
+  </div>
+
+  <!-- 4. Mobile Saved Media Gallery -->
+  <div class="card" style="padding:14px;margin-top:4px;">
+    <div class="gallery-hd">&#128247; Saved Media Gallery</div>
+    <div class="gallery" id="gallery-m"><div class="g-empty">No captures yet</div></div>
+  </div>
 </div>
 
 <script>
@@ -776,10 +802,13 @@ input[type=range]::-moz-range-thumb{
 /* ── SERVO ───────────────────────────────────────────── */
 function setServo(v){
   v=Math.round(+v);
-  document.getElementById('sdeg').textContent=v;
-  document.getElementById('hs').textContent=v;
+  var sd=document.getElementById('sdeg'); if(sd)sd.textContent=v;
+  var sdm=document.getElementById('sdeg-m'); if(sdm)sdm.textContent=v;
+  var hs=document.getElementById('hs'); if(hs)hs.textContent=v;
   var sl=document.getElementById('sl');
   if(sl){sl.value=v;sl.style.setProperty('--pct',(v/180*100)+'%');}
+  var slm=document.getElementById('sl-m');
+  if(slm){slm.value=v;slm.style.setProperty('--pct',(v/180*100)+'%');}
   _arc(v);
   fetch('/api/servo',{method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -1061,23 +1090,25 @@ function loadGallery(){
   fetch('/api/media/list')
     .then(function(r){return r.json();})
     .then(function(items){
-      var g=document.getElementById('gallery');
-      if(!g)return;
-      if(!items.length){g.innerHTML='<div class="g-empty">No captures yet</div>';return;}
-      var h='';
-      items.forEach(function(it){
-        var dl='/api/media/'+it.name;
-        h+='<div class="gitem">';
-        if(it.type==='photo'){
-          h+='<img src="'+dl+'" loading="lazy" alt="">';
-        } else {
-          h+='<div class="gitem-vid">&#127909;</div>';
-        }
-        h+='<div class="gitem-t">'+(it.type==='photo'?'JPG':'VID')+'</div>';
-        h+='<a class="g-dl" href="'+dl+'" download="'+it.name+'">&#8595;</a>';
-        h+='</div>';
+      ['gallery','gallery-m'].forEach(function(gid){
+        var g=document.getElementById(gid);
+        if(!g)return;
+        if(!items.length){g.innerHTML='<div class="g-empty">No captures yet</div>';return;}
+        var h='';
+        items.forEach(function(it){
+          var dl='/api/media/'+it.name;
+          h+='<div class="gitem">';
+          if(it.type==='photo'){
+            h+='<img src="'+dl+'" loading="lazy" alt="">';
+          } else {
+            h+='<div class="gitem-vid">&#127909;</div>';
+          }
+          h+='<div class="gitem-t">'+(it.type==='photo'?'JPG':'VID')+'</div>';
+          h+='<a class="g-dl" href="'+dl+'" download="'+it.name+'">&#8595;</a>';
+          h+='</div>';
+        });
+        g.innerHTML=h;
       });
-      g.innerHTML=h;
     }).catch(function(){});
 }
 
