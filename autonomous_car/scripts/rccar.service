@@ -1,0 +1,16 @@
+[Unit]
+Description=RC Car Autonomous Web Dashboard & Motor Control Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alfin
+WorkingDirectory=/home/alfin/autonomous_car
+ExecStart=/home/alfin/autonomous_car/venv/bin/python3 /home/alfin/autonomous_car/dashboard/app.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
