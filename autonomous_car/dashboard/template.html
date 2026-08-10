@@ -130,6 +130,11 @@ body{
   .a-stat      { display: none !important; }
   .a-servo     { display: none !important; }
   .mobile-dock { order: 3; display: flex; }
+
+  /* REMOVE D-PAD AND GALLERY SECTIONS COMPLETELY ON MOBILE VIEW */
+  .desktop-only, .dpad-section, .gallery-wrap {
+    display: none !important;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
