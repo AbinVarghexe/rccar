@@ -85,7 +85,7 @@ class WaypointConfig:
 @dataclass
 class DashboardConfig:
     host: str = "0.0.0.0"
-    port: int = 5000
+    port: int = 5001
     debug: bool = False
 
 @dataclass
