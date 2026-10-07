@@ -128,7 +128,10 @@ class Camera:
             if cam_info:
                 print(f"[CAMERA] Detected {len(cam_info)} CSI camera(s): {cam_info[0].get('Model', 'OV5647')}")
                 try:
-                    self._camera = Picamera2(0)
+                    try:
+                        self._camera = Picamera2(0)
+                    except TypeError:
+                        self._camera = Picamera2()
                     config = self._camera.create_video_configuration(
                         main={"size": (self.width, self.height)}
                     )

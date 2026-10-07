@@ -58,14 +58,19 @@ class DashboardServer:
 
         @self.app.route("/")
         def index():
+            body = DASHBOARD_HTML
             tmpl_path = os.path.join(curr_dir, "template.html")
             if os.path.exists(tmpl_path):
                 try:
                     with open(tmpl_path, "r", encoding="utf-8") as f:
-                        return f.read()
+                        body = f.read()
                 except Exception:
                     pass
-            return render_template_string(DASHBOARD_HTML)
+            resp = Response(body, mimetype="text/html")
+            resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+            return resp
 
         @self.app.route("/api/telemetry")
         def api_telemetry():
