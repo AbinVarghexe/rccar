@@ -210,6 +210,7 @@ DASHBOARD_HTML = """
   --txt3    : #8E8E93;
   --red     : #FF3B30;   /* Apple red    */
   --grn     : #34C759;   /* Apple green  */
+  --blu     : #007AFF;   /* Apple blue   */
   --r       : 20px;
   --rf      : -apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
 }
@@ -252,7 +253,7 @@ body{
 .lbl{
   font-size:10px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;color:var(--txt2);
-  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+  display:flex;align-items:center;gap:6px;
 }
 .lbl-dot{width:5px;height:5px;border-radius:50%;background:var(--txt2);flex-shrink:0;}
 
@@ -283,19 +284,20 @@ body{
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 
 /* ─────────────────────────────────────────────────────────────
-   DESKTOP GRID (FULL SCREEN SPACE UTILIZATION)
+   DESKTOP GRID (BALANCED, ALIGNED COLUMNS)
 ───────────────────────────────────────────────────────────── */
 .layout{
   display:grid;
-  grid-template-columns:1.4fr 1fr;
+  grid-template-columns:1.35fr 1fr;
   grid-template-rows:auto auto auto;
   gap:16px;
   padding:0 16px 28px;
   max-width:1240px;margin:0 auto;
+  align-items:stretch;
 }
-.a-cam   {grid-column:1;grid-row:1/3;}
-.a-stat  {grid-column:2;grid-row:1;}
-.a-servo {grid-column:2;grid-row:2;}
+.a-cam   {grid-column:1;grid-row:1/3;padding:16px;display:flex;flex-direction:column;min-height:0;}
+.a-stat  {grid-column:2;grid-row:1;padding:16px;}
+.a-servo {grid-column:2;grid-row:2;padding:16px;}
 .a-ctrl  {grid-column:1/-1;grid-row:3;}
 
 /* ─────────────────────────────────────────────────────────────
@@ -308,7 +310,7 @@ body{
     padding: 0 12px 32px;
     gap: 12px;
   }
-  .a-cam       { order: 1; }
+  .a-cam       { order: 1; padding: 12px; }
   .a-ctrl      { order: 2; }
   .a-stat      { display: none !important; }
   .a-servo     { display: none !important; }
@@ -321,39 +323,77 @@ body{
 }
 
 /* ─────────────────────────────────────────────────────────────
-   CAMERA CARD
+   CAMERA CARD & LIVE FIELD ALIGNMENT
 ───────────────────────────────────────────────────────────── */
-.a-cam{padding:10px;}
+.cam-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;flex-wrap:wrap;gap:8px;
+}
+.cam-tools{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.tool-btn{
+  background:#FFFFFF;border:1px solid #E5E5EA;border-radius:8px;
+  padding:5px 9px;font-size:11px;font-weight:600;color:var(--txt);
+  cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+  transition:all .12s;font-family:var(--rf);box-shadow:0 1px 3px rgba(0,0,0,.03);
+}
+.tool-btn:hover{background:#F2F2F7;border-color:#D1D1D6;}
+.tool-btn.active{background:#1C1C1E;color:#FFFFFF;border-color:#1C1C1E;}
+.tool-btn svg{display:block;}
+
 .cam-frame{
   border-radius:14px;overflow:hidden;
-  background:#0a0a0a;border:1px solid rgba(255,255,255,.12);
-  position:relative;
+  background:#050505;border:1px solid rgba(0,0,0,.08);
+  position:relative;flex:1;min-height:360px;
+  display:flex;align-items:center;justify-content:center;
 }
 .cam-frame img{
-  width:100%;aspect-ratio:4/3;object-fit:cover;display:block;
+  width:100%;height:100%;max-width:100%;max-height:100%;
+  object-fit:contain;display:block;
+  transition:transform .18s ease-out;
 }
+.cam-frame img.cover-mode{
+  object-fit:cover;
+}
+
+/* ── ALIGNMENT HUD OVERLAY ── */
+.cam-align-overlay{
+  position:absolute;inset:0;pointer-events:none;
+}
+.grid-svg{
+  width:100%;height:100%;display:block;
+}
+.grid-badge{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  background:rgba(28,28,30,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.18);color:#FFFFFF;
+  padding:3px 10px;border-radius:12px;font-size:9px;font-weight:700;
+  letter-spacing:.06em;display:flex;align-items:center;gap:5px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap;
+}
+
 .cam-hud{
   position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(transparent,rgba(0,0,0,.7));
+  background:linear-gradient(transparent,rgba(0,0,0,.75));
   display:flex;align-items:flex-end;justify-content:space-between;
-  padding:20px 12px 10px;
+  padding:20px 12px 10px;pointer-events:none;
 }
 .cam-badge{
-  display:flex;align-items:center;gap:4px;
-  font-size:10px;font-weight:700;letter-spacing:.07em;color:rgba(255,255,255,.8);
+  display:flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;letter-spacing:.07em;color:rgba(255,255,255,.9);
 }
 .rec-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1s infinite;}
-.cam-res{font-size:10px;color:rgba(255,255,255,.45);font-weight:600;}
+.cam-res{font-size:10px;color:rgba(255,255,255,.6);font-weight:600;}
 
 /* ─────────────────────────────────────────────────────────────
    STATUS CARD (desktop only)
 ───────────────────────────────────────────────────────────── */
-.a-stat{padding:16px;}
 .st-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
 .st-ring{position:relative;width:80px;height:80px;}
 .st-ring svg{width:80px;height:80px;transform:rotate(-90deg);}
-.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:5;}
-.ring-arc{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;
+.ring-bg{fill:none;stroke:rgba(0,0,0,.08);stroke-width:5;}
+.ring-arc{fill:none;stroke:#1C1C1E;stroke-width:5;stroke-linecap:round;
   stroke-dasharray:215;stroke-dashoffset:60;
   transition:stroke .35s,stroke-dashoffset .4s;}
 .st-ico{
@@ -374,7 +414,6 @@ body{
 /* ─────────────────────────────────────────────────────────────
    SERVO CARD (desktop only)
 ───────────────────────────────────────────────────────────── */
-.a-servo{padding:16px;}
 .sv-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
 .sv-num{font-size:2.2rem;font-weight:800;letter-spacing:-.04em;line-height:1;color:#1C1C1E;}
 .sv-num sup{font-size:.85rem;font-weight:500;color:var(--txt2);}
@@ -401,10 +440,14 @@ input[type=range]::-moz-range-thumb{
   flex:1;height:32px;font-size:11px;font-weight:700;font-family:var(--rf);
   background:#1C1C1E;color:#fff;
   border:1px solid #1C1C1E;border-radius:8px;cursor:pointer;
-  transition:background .1s;
+  transition:background .1s,opacity .1s;
 }
 .sv-btn:hover{background:#3A3A3C;}
 .sv-btn:active{background:#545456;}
+.sv-btn-sec{
+  background:#FFFFFF;color:var(--txt);border:1px solid #E5E5EA;
+}
+.sv-btn-sec:hover{background:#F2F2F7;}
 
 /* ─────────────────────────────────────────────────────────────
    CONTROLS ROW (bottom)
@@ -476,7 +519,6 @@ input[type=range]::-moz-range-thumb{
   .mobile-dock{display:flex;}
   /* hide desktop capture section inside .a-ctrl on mobile */
   .cap-section{display:none;}
-  /* joystick gets bigger on mobile */
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -594,14 +636,6 @@ input[type=range]::-moz-range-thumb{
   animation:flash .3s ease-out forwards;
   z-index:999;
 }
-
-/* ─────────────────────────────────────────────────────────────
-   DESKTOP EXTRA PANEL row separator
-───────────────────────────────────────────────────────────── */
-.sep{
-  height:1px;background:rgba(255,255,255,.06);
-  grid-column:1/-1;margin:2px 0;
-}
 </style>
 </head>
 <body>
@@ -631,21 +665,77 @@ input[type=range]::-moz-range-thumb{
 <!-- ── MAIN LAYOUT ── -->
 <div class="layout">
 
-  <!-- 1. CAMERA -->
+  <!-- 1. CAMERA & FIELD ALIGNMENT -->
   <div class="card a-cam">
-    <div class="lbl desktop-only"><div class="lbl-dot"></div>Live Feed</div>
+    <div class="cam-header">
+      <div class="lbl"><div class="lbl-dot"></div>Live Feed &bull; Field Alignment</div>
+      <div class="cam-tools">
+        <button class="tool-btn" id="btn-grid" onclick="toggleGrid()" title="Toggle Center Reticle & Heading Guidelines">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
+          Align Guide
+        </button>
+        <button class="tool-btn" id="btn-fliph" onclick="toggleFlipH()" title="Mirror Horizontal">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h3m8-18h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v20"/></svg>
+          Flip H
+        </button>
+        <button class="tool-btn" id="btn-flipv" onclick="toggleFlipV()" title="Invert Upside-Down">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M2 12h20"/></svg>
+          Flip V
+        </button>
+        <button class="tool-btn" id="btn-rot" onclick="cycleRotation()" title="Rotate 90°">
+          0°
+        </button>
+        <button class="tool-btn" id="btn-fit" onclick="toggleFitMode()" title="Toggle Fit Uncropped vs Fill">
+          Fit
+        </button>
+      </div>
+    </div>
+    
     <div class="cam-frame">
-      <img id="cam" src="/api/frame" alt="live">
+      <img id="cam" src="/api/frame" alt="live camera feed">
+
+      <!-- Interactive Alignment Reticle & Heading Guidelines -->
+      <div class="cam-align-overlay" id="cam-grid" style="display:none;">
+        <svg class="grid-svg" viewBox="0 0 640 480" preserveAspectRatio="none">
+          <!-- Driving Corridor / Lane Perspective -->
+          <polygon points="140,480 270,240 370,240 500,480" fill="rgba(0,122,255,0.06)" stroke="rgba(0,122,255,0.3)" stroke-width="1.5" stroke-dasharray="5 5"/>
+          
+          <!-- Horizon Line (Pitch Level 0°) -->
+          <line x1="20" y1="240" x2="620" y2="240" stroke="rgba(52,199,89,0.75)" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="30" y="234" fill="rgba(52,199,89,0.9)" font-size="10" font-weight="700">HORIZON 0°</text>
+
+          <!-- Vehicle Forward Centerline (Yaw Center 0°) -->
+          <line x1="320" y1="20" x2="320" y2="460" stroke="rgba(255,59,48,0.75)" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="326" y="36" fill="rgba(255,59,48,0.9)" font-size="10" font-weight="700">CENTERLINE</text>
+
+          <!-- Center Crosshair Reticle -->
+          <circle cx="320" cy="240" r="32" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
+          <circle cx="320" cy="240" r="3" fill="#FF3B30"/>
+          <line x1="284" y1="240" x2="356" y2="240" stroke="#FFFFFF" stroke-width="2"/>
+          <line x1="320" y1="204" x2="320" y2="276" stroke="#FFFFFF" stroke-width="2"/>
+
+          <!-- Yaw Angle Ticks -->
+          <line x1="220" y1="230" x2="220" y2="250" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <text x="210" y="224" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="600">-15°</text>
+          <line x1="420" y1="230" x2="420" y2="250" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <text x="412" y="224" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="600">+15°</text>
+        </svg>
+        <div class="grid-badge">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="#34C759"><circle cx="12" cy="12" r="10"/></svg>
+          ALIGNMENT GRID ACTIVE &bull; VEHICLE CENTER
+        </div>
+      </div>
+
       <div class="cam-hud">
         <div class="cam-badge"><div class="rec-dot"></div>LIVE</div>
-        <span class="cam-res">640 &times; 480</span>
+        <span class="cam-res" id="cam-hud-info">640 &times; 480 &bull; Fit</span>
       </div>
     </div>
   </div>
 
   <!-- STATUS (desktop only) -->
   <div class="card a-stat desktop-only">
-    <div class="lbl"><div class="lbl-dot"></div>Status</div>
+    <div class="lbl" style="margin-bottom:10px;"><div class="lbl-dot"></div>Status</div>
     <div class="st-wrap">
       <div class="st-ring">
         <svg viewBox="0 0 80 80">
@@ -661,35 +751,50 @@ input[type=range]::-moz-range-thumb{
       <div class="hud-row">
         <div class="hud-box"><div class="hud-k">Joy X</div><div class="hud-v" id="hx">0.00</div></div>
         <div class="hud-box"><div class="hud-k">Joy Y</div><div class="hud-v" id="hy">0.00</div></div>
-        <div class="hud-box"><div class="hud-k">Servo</div><div class="hud-v"><span id="hs">90</span>°</div></div>
+        <div class="hud-box"><div class="hud-k">Servo Pan</div><div class="hud-v"><span id="hs">90</span>°</div></div>
         <div class="hud-box"><div class="hud-k">Signal</div><div class="hud-v" style="color:var(--grn)">LIVE</div></div>
       </div>
     </div>
   </div>
 
-  <!-- SERVO (desktop only) -->
+  <!-- SERVO & CALIBRATION (desktop only) -->
   <div class="card a-servo desktop-only">
-    <div class="lbl"><div class="lbl-dot"></div>Servo Pan &mdash; GPIO 12</div>
+    <div class="lbl" style="margin-bottom:10px;"><div class="lbl-dot"></div>Servo Pan &bull; GPIO 12</div>
     <div class="sv-top">
       <svg width="60" height="38" viewBox="0 0 60 38" style="flex-shrink:0">
-        <path d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4" stroke-linecap="round"/>
-        <path id="arc" d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"
+        <path d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="4" stroke-linecap="round"/>
+        <path id="arc" d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="#1C1C1E" stroke-width="4" stroke-linecap="round"
               stroke-dasharray="85" stroke-dashoffset="42" style="transition:stroke-dashoffset .2s"/>
         <defs><filter id="gf"><feGaussianBlur stdDeviation="2" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-        <circle id="aknob" cx="30" cy="9" r="4.5" fill="#fff" filter="url(#gf)" style="transition:cx .2s,cy .2s"/>
+        <circle id="aknob" cx="30" cy="9" r="4.5" fill="#1C1C1E" filter="url(#gf)" style="transition:cx .2s,cy .2s"/>
       </svg>
       <div>
         <div class="sv-num"><span id="sdeg">90</span><sup>°</sup></div>
-        <div class="sv-lbl">Pan Angle</div>
+        <div class="sv-lbl">Pan Angle &bull; Trim: <b id="strim">+0.0°</b></div>
       </div>
     </div>
+    
     <input type="range" id="sl" min="0" max="180" value="90"
            oninput="setServo(this.value)" style="--pct:50%">
+
+    <!-- Fine Nudge Controls -->
     <div class="sv-btns">
-      <button class="sv-btn" onclick="setServo(0)">&#9664; 0°</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(-5)" title="Nudge 5° Left">-5°</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(-1)" title="Nudge 1° Left">-1°</button>
       <button class="sv-btn" onclick="setServo(90)">Center</button>
-      <button class="sv-btn" onclick="setServo(180)">180° &#9654;</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(1)" title="Nudge 1° Right">+1°</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(5)" title="Nudge 5° Right">+5°</button>
+    </div>
+
+    <!-- Alignment Calibration Actions -->
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:28px;" onclick="calibrateCurrentAsCenter()" title="Calibrate current position as vehicle true forward center">
+        Set Center
+      </button>
+      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:28px;color:var(--txt3);" onclick="resetServoTrim()" title="Reset calibration offset to 0°">
+        Reset Trim
+      </button>
     </div>
   </div>
 
@@ -796,27 +901,31 @@ input[type=range]::-moz-range-thumb{
   <div class="rec-bar" id="rec-bar-m"><div class="rec-bar-dot"></div><span id="rec-t-m">00:00</span></div>
   <div class="cap-msg" id="cap-msg-m">Ready</div>
 
-  <!-- 3. Mobile Servo Pan Mode Control Panel -->
+  <!-- 3. Mobile Servo Pan & Calibration -->
   <div class="card" style="padding:14px;margin-top:4px;">
-    <div class="lbl"><div class="lbl-dot"></div>Servo Pan Mode &mdash; GPIO 12</div>
-    <div class="sv-top">
+    <div class="lbl" style="margin-bottom:8px;"><div class="lbl-dot"></div>Servo Pan &bull; GPIO 12</div>
+    <div class="sv-top" style="margin-bottom:8px;">
       <div>
         <div class="sv-num"><span id="sdeg-m">90</span><sup>°</sup></div>
-        <div class="sv-lbl">Pan Angle</div>
+        <div class="sv-lbl">Pan Angle &bull; Trim: <b id="strim-m">+0.0°</b></div>
       </div>
     </div>
     <input type="range" id="sl-m" min="0" max="180" value="90"
            oninput="setServo(this.value)" style="--pct:50%">
-    <div class="sv-btns">
-      <button class="sv-btn" onclick="setServo(0)">0°</button>
-      <button class="sv-btn" onclick="setServo(45)">45°</button>
+    <div class="sv-btns" style="margin-bottom:8px;">
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(-5)">-5°</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(-1)">-1°</button>
       <button class="sv-btn" onclick="setServo(90)">Center</button>
-      <button class="sv-btn" onclick="setServo(135)">135°</button>
-      <button class="sv-btn" onclick="setServo(180)">180°</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(1)">+1°</button>
+      <button class="sv-btn sv-btn-sec" onclick="nudgeServo(5)">+5°</button>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:30px;" onclick="calibrateCurrentAsCenter()">Set Center</button>
+      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:30px;color:var(--txt3);" onclick="resetServoTrim()">Reset Trim</button>
     </div>
   </div>
 
-  <!-- 4. Mobile Saved Media Gallery (below Servo Pan mode section) -->
+  <!-- 4. Mobile Saved Media Gallery -->
   <div class="card" style="padding:14px;margin-top:4px;">
     <div class="gallery-hd" style="display:flex;align-items:center;gap:6px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -827,7 +936,174 @@ input[type=range]::-moz-range-thumb{
 </div>
 
 <script>
-/* ── CAMERA ──────────────────────────────────────────── */
+/* ── CAMERA & LIVE ALIGNMENT CONTROLS ───────────────── */
+var camAlignment = {
+  flip_h: false,
+  flip_v: false,
+  rotation: 0,
+  fit_mode: 'contain',
+  grid_active: false,
+  trim_offset: 0.0
+};
+
+// Restore saved settings from localStorage
+try {
+  var _s = localStorage.getItem('rc_cam_alignment');
+  if (_s) {
+    var _obj = JSON.parse(_s);
+    Object.assign(camAlignment, _obj);
+  }
+} catch(e){}
+
+function applyCamAlignmentUI(){
+  var img = document.getElementById('cam');
+  if (!img) return;
+
+  var sx = camAlignment.flip_h ? -1 : 1;
+  var sy = camAlignment.flip_v ? -1 : 1;
+  var r  = camAlignment.rotation || 0;
+  img.style.transform = 'scale(' + sx + ',' + sy + ') rotate(' + r + 'deg)';
+
+  if (camAlignment.fit_mode === 'cover') {
+    img.classList.add('cover-mode');
+  } else {
+    img.classList.remove('cover-mode');
+  }
+
+  var grid = document.getElementById('cam-grid');
+  if (grid) {
+    grid.style.display = camAlignment.grid_active ? 'block' : 'none';
+  }
+
+  var bGrid = document.getElementById('btn-grid');
+  if (bGrid) bGrid.classList.toggle('active', camAlignment.grid_active);
+
+  var bH = document.getElementById('btn-fliph');
+  if (bH) bH.classList.toggle('active', camAlignment.flip_h);
+
+  var bV = document.getElementById('btn-flipv');
+  if (bV) bV.classList.toggle('active', camAlignment.flip_v);
+
+  var bRot = document.getElementById('btn-rot');
+  if (bRot) {
+    bRot.textContent = (camAlignment.rotation || 0) + '°';
+    bRot.classList.toggle('active', (camAlignment.rotation || 0) !== 0);
+  }
+
+  var bFit = document.getElementById('btn-fit');
+  if (bFit) {
+    bFit.textContent = camAlignment.fit_mode === 'cover' ? 'Fill' : 'Fit';
+    bFit.classList.toggle('active', camAlignment.fit_mode === 'cover');
+  }
+
+  var hudInfo = document.getElementById('cam-hud-info');
+  if (hudInfo) {
+    var mode = camAlignment.fit_mode === 'cover' ? 'Fill' : 'Fit';
+    var rot = camAlignment.rotation ? ' • ' + camAlignment.rotation + '°' : '';
+    var flp = (camAlignment.flip_h ? ' • FlpH' : '') + (camAlignment.flip_v ? ' • FlpV' : '');
+    hudInfo.textContent = '640 × 480 • ' + mode + rot + flp;
+  }
+
+  updateTrimDisplay(camAlignment.trim_offset || 0.0);
+
+  try {
+    localStorage.setItem('rc_cam_alignment', JSON.stringify(camAlignment));
+  } catch(e){}
+}
+
+function toggleGrid(){
+  camAlignment.grid_active = !camAlignment.grid_active;
+  applyCamAlignmentUI();
+}
+
+function toggleFlipH(){
+  camAlignment.flip_h = !camAlignment.flip_h;
+  applyCamAlignmentUI();
+  syncBackendAlignment();
+}
+
+function toggleFlipV(){
+  camAlignment.flip_v = !camAlignment.flip_v;
+  applyCamAlignmentUI();
+  syncBackendAlignment();
+}
+
+function cycleRotation(){
+  camAlignment.rotation = ((camAlignment.rotation || 0) + 90) % 360;
+  applyCamAlignmentUI();
+  syncBackendAlignment();
+}
+
+function toggleFitMode(){
+  camAlignment.fit_mode = camAlignment.fit_mode === 'contain' ? 'cover' : 'contain';
+  applyCamAlignmentUI();
+}
+
+function syncBackendAlignment(){
+  fetch('/api/camera/alignment', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      flip_h: camAlignment.flip_h,
+      flip_v: camAlignment.flip_v,
+      rotation: camAlignment.rotation
+    })
+  }).catch(function(){});
+}
+
+function nudgeServo(delta){
+  var sl = document.getElementById('sl') || document.getElementById('sl-m');
+  var cur = sl ? +sl.value : 90;
+  setServo(cur + delta);
+}
+
+function calibrateCurrentAsCenter(){
+  var sl = document.getElementById('sl') || document.getElementById('sl-m');
+  var cur = sl ? +sl.value : 90;
+  var offset = cur - 90;
+  camAlignment.trim_offset = offset;
+  updateTrimDisplay(offset);
+  fetch('/api/servo/trim', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({offset: offset})
+  }).then(function(){
+    setServo(90);
+    setMsg('Center calibrated (' + (offset>=0?'+':'') + offset.toFixed(1) + '°)', 'ok');
+  }).catch(function(){});
+  try {
+    localStorage.setItem('rc_cam_alignment', JSON.stringify(camAlignment));
+  } catch(e){}
+}
+
+function resetServoTrim(){
+  camAlignment.trim_offset = 0.0;
+  updateTrimDisplay(0.0);
+  fetch('/api/servo/trim', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({offset: 0.0})
+  }).then(function(){
+    setServo(90);
+    setMsg('Trim reset to 0°');
+  }).catch(function(){});
+  try {
+    localStorage.setItem('rc_cam_alignment', JSON.stringify(camAlignment));
+  } catch(e){}
+}
+
+function updateTrimDisplay(offset){
+  var offStr = (offset >= 0 ? '+' : '') + Number(offset).toFixed(1) + '°';
+  ['strim', 'strim-m'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.textContent = offStr;
+  });
+}
+
+// Initial UI setup on page load
+applyCamAlignmentUI();
+
+/* ── CAMERA STREAM ──────────────────────────────────── */
 (function(){
   var img=document.getElementById('cam'),busy=false;
   setInterval(function(){
@@ -841,7 +1117,7 @@ input[type=range]::-moz-range-thumb{
 
 /* ── SERVO ───────────────────────────────────────────── */
 function setServo(v){
-  v=Math.round(+v);
+  v=Math.round(Math.max(0, Math.min(180, +v)));
   var sd=document.getElementById('sdeg'); if(sd)sd.textContent=v;
   var sdm=document.getElementById('sdeg-m'); if(sdm)sdm.textContent=v;
   var hs=document.getElementById('hs'); if(hs)hs.textContent=v;
@@ -911,7 +1187,6 @@ function motor(c){
 (function(){
   var cv=document.getElementById('jc'),ctx=cv.getContext('2d');
 
-  // Responsive canvas: use container width on mobile
   function resize(){
     var isMobile=window.innerWidth<=680;
     var target=isMobile?Math.min(window.innerWidth-48,300):240;
@@ -1039,6 +1314,7 @@ setInterval(function(){
     .then(function(d){
       if(d.servo_angle!=null)setServo(Math.round(d.servo_angle));
       if(d.status)setStatus(d.status);
+      if(d.trim_offset!=null)updateTrimDisplay(d.trim_offset);
     }).catch(function(){});
 },700);
 

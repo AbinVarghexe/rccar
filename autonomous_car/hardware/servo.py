@@ -36,6 +36,7 @@ class ServoController:
         self.servo_pin       : int            = servo_pin
         self._pwm            : Optional[object] = None   # RPi.GPIO PWM instance
         self._current_angle  : float          = self.CENTER_ANGLE
+        self.trim_offset     : float          = 0.0
         self.is_initialized  : bool           = False
         self._use_gpio       : bool           = False
 
@@ -60,13 +61,14 @@ class ServoController:
             GPIO.setup(self.servo_pin, GPIO.OUT)
 
             self._pwm = GPIO.PWM(self.servo_pin, self.PWM_FREQ)
-            # Start at center (90°)
-            self._pwm.start(self._angle_to_duty(self.CENTER_ANGLE))
+            # Start at center (90°) with trim
+            effective_center = max(self.MIN_ANGLE, min(self.MAX_ANGLE, self.CENTER_ANGLE + self.trim_offset))
+            self._pwm.start(self._angle_to_duty(effective_center))
             time.sleep(0.3)
 
             self.is_initialized  = True
             self._current_angle  = self.CENTER_ANGLE
-            print(f"[SERVO READY] GPIO {self.servo_pin} (Pin 32) — Hardware PWM {self.PWM_FREQ}Hz — Center 90°")
+            print(f"[SERVO READY] GPIO {self.servo_pin} (Pin 32) — Hardware PWM {self.PWM_FREQ}Hz — Center 90° (Trim {self.trim_offset:+.1f}°)")
             return True
         except Exception as e:
             logger.error(f"[SERVO] Init failed on GPIO {self.servo_pin}: {e}")
@@ -79,17 +81,24 @@ class ServoController:
         return self.DUTY_MIN + (angle / self.MAX_ANGLE) * (self.DUTY_MAX - self.DUTY_MIN)
 
     # ------------------------------------------------------------------
+    def set_trim(self, offset: float) -> None:
+        """Set calibration trim offset in degrees (e.g. -30° to +30°)."""
+        self.trim_offset = max(-30.0, min(30.0, float(offset)))
+        print(f">>> SERVO TRIM SET: {self.trim_offset:+.1f} deg")
+        self.set_angle(self._current_angle)
+
     def set_angle(self, angle: float) -> None:
-        """Move servo to given angle (0–180°)."""
+        """Move servo to given angle (0-180 deg), factoring in trim offset."""
         angle = max(self.MIN_ANGLE, min(self.MAX_ANGLE, float(angle)))
         self._current_angle = angle
-        duty = self._angle_to_duty(angle)
+        effective_angle = max(self.MIN_ANGLE, min(self.MAX_ANGLE, angle + self.trim_offset))
+        duty = self._angle_to_duty(effective_angle)
 
-        print(f">>> SERVO: {angle:.1f}° → duty {duty:.2f}%")
+        print(f">>> SERVO: target={angle:.1f} deg (effective={effective_angle:.1f} deg, trim={self.trim_offset:+.1f} deg) -> duty {duty:.2f}%")
         if self.is_initialized and self._pwm:
             self._pwm.ChangeDutyCycle(duty)
         else:
-            print(f"[SIMULATION] Servo → {angle:.1f}°")
+            print(f"[SIMULATION] Servo -> target {angle:.1f} deg (effective {effective_angle:.1f} deg)")
 
     def center(self) -> None:
         self.set_angle(self.CENTER_ANGLE)
