@@ -40,7 +40,7 @@ def _ensure_media_dir():
 
 class Camera:
     """
-    Raspberry Pi Camera — OV5647 CSI or USB WebCam @ 640x480.
+    Raspberry Pi Camera - OV5647 CSI or USB WebCam @ 640x480.
     Captures JPEG frames via Picamera2 or OpenCV fallback.
     Supports live alignment (flip horizontal, flip vertical, rotation 90/180/270).
     Supports concurrent photo capture + video recording.
@@ -78,6 +78,25 @@ class Camera:
         self._stop_record   = threading.Event()
 
         _ensure_media_dir()
+        self._frame = self._create_standby_frame("STANDBY")
+
+    def _create_standby_frame(self, message: str = "STANDBY") -> bytes:
+        """Generate an immediate standby JPEG frame so streams never send blank/204 data."""
+        if USE_CV2:
+            try:
+                frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+                frame[:] = (18, 18, 20)
+                for x in range(0, self.width, 40):
+                    cv2.line(frame, (x, 0), (x, self.height), (32, 32, 36), 1)
+                for y in range(0, self.height, 40):
+                    cv2.line(frame, (0, y), (self.width, y), (32, 32, 36), 1)
+                cv2.putText(frame, "RC CAR LIVE FEED", (24, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(frame, f"STATUS: {message}", (24, self.height // 2), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (50, 199, 89), 2)
+                _, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                return enc.tobytes()
+            except Exception:
+                pass
+        return b""
 
     def set_alignment(
         self,
@@ -274,11 +293,18 @@ class Camera:
 
     def generate_mjpeg(self):
         """Generator for MJPEG multipart streaming."""
-        while self.is_initialized:
-            frame = self.get_frame()
+        while self._running or self.is_initialized:
+            if not self.is_initialized:
+                time.sleep(0.1)
+                frame = self._create_standby_frame("CAMERA STARTING...")
+            else:
+                frame = self.get_frame() or self._create_standby_frame("ACQUIRING FRAME...")
+
             if frame:
                 yield (
-                    b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n"
+                    b"Content-Length: " + str(len(frame)).encode() + b"\r\n\r\n"
                     + frame
                     + b"\r\n"
                 )
@@ -312,7 +338,7 @@ class Camera:
             return None
 
     # ------------------------------------------------------------------ #
-    #  VIDEO RECORDING  (MJPEG frames → .mjpeg file)
+    #  VIDEO RECORDING  (MJPEG frames -> .mjpeg file)
     # ------------------------------------------------------------------ #
     def start_recording(self) -> Optional[str]:
         """
@@ -332,7 +358,7 @@ class Camera:
             self._record_frames = []
 
         self._stop_record.clear()
-        print(f"[VIDEO] Recording started → {filename}")
+        print(f"[VIDEO] Recording started -> {filename}")
         return filename
 
     def stop_recording(self) -> Optional[str]:

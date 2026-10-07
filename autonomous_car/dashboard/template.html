@@ -509,7 +509,7 @@ input[type=range]::-moz-range-thumb{
     </div>
     
     <div class="cam-frame">
-      <img id="cam" src="/api/frame" alt="live camera feed">
+      <img id="cam" src="/video_feed" alt="live camera feed">
 
       <!-- Interactive Alignment Reticle & Heading Guidelines -->
       <div class="cam-align-overlay" id="cam-grid" style="display:none;">
@@ -922,14 +922,53 @@ applyCamAlignmentUI();
 
 /* ── CAMERA STREAM ──────────────────────────────────── */
 (function(){
-  var img=document.getElementById('cam'),busy=false;
-  setInterval(function(){
-    if(busy)return;busy=true;
-    var n=new Image();
-    n.onload=function(){img.src=n.src;busy=false;};
-    n.onerror=function(){busy=false;};
-    n.src='/api/frame?_='+Date.now();
-  },42);
+  var img = document.getElementById('cam');
+  if (!img) return;
+
+  var reconnectTimer = null;
+  var usePolling = false;
+  var pollBusy = false;
+  var loader = new Image();
+
+  function scheduleReconnect() {
+    if (reconnectTimer || usePolling) return;
+    reconnectTimer = setTimeout(function(){
+      reconnectTimer = null;
+      img.src = '/video_feed?t=' + Date.now();
+    }, 1200);
+  }
+
+  img.onerror = function() {
+    if (!usePolling) {
+      scheduleReconnect();
+    }
+  };
+
+  var watchdog = setTimeout(function(){
+    if (!img.naturalWidth || img.naturalWidth === 0) {
+      usePolling = true;
+      startPolling();
+    }
+  }, 3000);
+
+  img.onload = function() {
+    clearTimeout(watchdog);
+  };
+
+  function startPolling() {
+    loader.onload = function() {
+      img.src = loader.src;
+      pollBusy = false;
+    };
+    loader.onerror = function() {
+      pollBusy = false;
+    };
+    setInterval(function(){
+      if (pollBusy) return;
+      pollBusy = true;
+      loader.src = '/api/frame?_=' + Date.now();
+    }, 50);
+  }
 }());
 
 /* ── SERVO ───────────────────────────────────────────── */

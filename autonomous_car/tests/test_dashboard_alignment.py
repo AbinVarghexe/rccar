@@ -29,6 +29,10 @@ class TestCameraAlignmentAndServoTrim(unittest.TestCase):
         )
         self.client = self.server.app.test_client()
 
+    def tearDown(self):
+        if self.camera:
+            self.camera.stop()
+
     def test_servo_trim_offset(self):
         self.assertEqual(self.servo.trim_offset, 0.0)
         self.servo.set_trim(5.0)

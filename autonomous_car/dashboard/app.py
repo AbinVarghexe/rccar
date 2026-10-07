@@ -36,6 +36,11 @@ class DashboardServer:
         self.motors  = motor_controller or MotorController()
         self.servo   = servo_controller or ServoController()
         self.camera  = camera or Camera()
+        if self.camera and not self.camera.is_initialized:
+            try:
+                self.camera.start()
+            except Exception as e:
+                print(f"[DASHBOARD] Warning: camera.start() failed: {e}")
         self.app     = Flask(__name__)
 
         self._telem: Dict[str, Any] = {
@@ -53,6 +58,13 @@ class DashboardServer:
 
         @self.app.route("/")
         def index():
+            tmpl_path = os.path.join(curr_dir, "template.html")
+            if os.path.exists(tmpl_path):
+                try:
+                    with open(tmpl_path, "r", encoding="utf-8") as f:
+                        return f.read()
+                except Exception:
+                    pass
             return render_template_string(DASHBOARD_HTML)
 
         @self.app.route("/api/telemetry")
@@ -62,7 +74,12 @@ class DashboardServer:
 
         @self.app.route("/api/frame")
         def api_frame():
-            if self.camera and self.camera.is_initialized:
+            if self.camera:
+                if not self.camera.is_initialized:
+                    try:
+                        self.camera.start()
+                    except Exception:
+                        pass
                 frame = self.camera.get_frame()
                 if frame:
                     r = Response(frame, mimetype="image/jpeg")
@@ -70,11 +87,19 @@ class DashboardServer:
                     r.headers["Pragma"]        = "no-cache"
                     r.headers["Expires"]       = "0"
                     return r
+                standby = self.camera._create_standby_frame("CONNECTING...")
+                if standby:
+                    return Response(standby, mimetype="image/jpeg")
             return Response(b"", mimetype="image/jpeg", status=204)
 
         @self.app.route("/video_feed")
         def video_feed():
-            if self.camera and self.camera.is_initialized:
+            if self.camera:
+                if not self.camera.is_initialized:
+                    try:
+                        self.camera.start()
+                    except Exception:
+                        pass
                 return Response(
                     self.camera.generate_mjpeg(),
                     mimetype="multipart/x-mixed-replace; boundary=frame"
@@ -90,6 +115,29 @@ class DashboardServer:
             with self._lock:
                 self._telem["servo_angle"] = round(angle, 1)
             return jsonify({"status": "success", "angle": angle})
+
+        @self.app.route("/api/servo/trim", methods=["GET", "POST"])
+        def api_servo_trim():
+            if request.method == "POST":
+                data = request.json or {}
+                offset = float(data.get("offset", 0.0))
+                self.servo.set_trim(offset)
+            return jsonify({"status": "success", "trim_offset": self.servo.trim_offset})
+
+        @self.app.route("/api/camera/alignment", methods=["GET", "POST"])
+        def api_camera_alignment():
+            if request.method == "POST":
+                data = request.json or {}
+                flip_h = data.get("flip_h")
+                flip_v = data.get("flip_v")
+                rotation = data.get("rotation")
+                self.camera.set_alignment(flip_h=flip_h, flip_v=flip_v, rotation=rotation)
+            return jsonify({
+                "status": "success",
+                "flip_h": self.camera.flip_h,
+                "flip_v": self.camera.flip_v,
+                "rotation": self.camera.rotation,
+            })
 
         # ---- DISCRETE MOTOR ------------------------------------------
         @self.app.route("/api/motor/<cmd>", methods=["POST"])
@@ -692,7 +740,7 @@ input[type=range]::-moz-range-thumb{
     </div>
     
     <div class="cam-frame">
-      <img id="cam" src="/api/frame" alt="live camera feed">
+      <img id="cam" src="/video_feed" alt="live camera feed">
 
       <!-- Interactive Alignment Reticle & Heading Guidelines -->
       <div class="cam-align-overlay" id="cam-grid" style="display:none;">
@@ -1105,14 +1153,53 @@ applyCamAlignmentUI();
 
 /* ── CAMERA STREAM ──────────────────────────────────── */
 (function(){
-  var img=document.getElementById('cam'),busy=false;
-  setInterval(function(){
-    if(busy)return;busy=true;
-    var n=new Image();
-    n.onload=function(){img.src=n.src;busy=false;};
-    n.onerror=function(){busy=false;};
-    n.src='/api/frame?_='+Date.now();
-  },42);
+  var img = document.getElementById('cam');
+  if (!img) return;
+
+  var reconnectTimer = null;
+  var usePolling = false;
+  var pollBusy = false;
+  var loader = new Image();
+
+  function scheduleReconnect() {
+    if (reconnectTimer || usePolling) return;
+    reconnectTimer = setTimeout(function(){
+      reconnectTimer = null;
+      img.src = '/video_feed?t=' + Date.now();
+    }, 1200);
+  }
+
+  img.onerror = function() {
+    if (!usePolling) {
+      scheduleReconnect();
+    }
+  };
+
+  var watchdog = setTimeout(function(){
+    if (!img.naturalWidth || img.naturalWidth === 0) {
+      usePolling = true;
+      startPolling();
+    }
+  }, 3000);
+
+  img.onload = function() {
+    clearTimeout(watchdog);
+  };
+
+  function startPolling() {
+    loader.onload = function() {
+      img.src = loader.src;
+      pollBusy = false;
+    };
+    loader.onerror = function() {
+      pollBusy = false;
+    };
+    setInterval(function(){
+      if (pollBusy) return;
+      pollBusy = true;
+      loader.src = '/api/frame?_=' + Date.now();
+    }, 50);
+  }
 }());
 
 /* ── SERVO ───────────────────────────────────────────── */
