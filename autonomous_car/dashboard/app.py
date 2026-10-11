@@ -32,16 +32,23 @@ class DashboardServer:
         motor_controller: Optional[MotorController] = None,
         servo_controller: Optional[ServoController] = None,
         camera: Optional[Camera] = None,
+        autonomous_driver: Optional[object] = None,
     ) -> None:
         self.config  = config
         self.motors  = motor_controller or MotorController()
         self.servo   = servo_controller or ServoController()
         self.camera  = camera or Camera()
+        self.autonomous_driver = autonomous_driver
+
         if self.camera and not self.camera.is_initialized:
             try:
                 self.camera.start()
             except Exception as e:
                 print(f"[DASHBOARD] Warning: camera.start() failed: {e}")
+
+        # Hook Autonomous HUD annotator to Camera if available
+        if self.camera and self.autonomous_driver:
+            self.camera.set_hud_annotator(self.autonomous_driver.annotate_frame)
 
         # Initialize Bluetooth RFCOMM Server
         bt_cfg = getattr(self.config, "bluetooth", None)
@@ -204,6 +211,35 @@ class DashboardServer:
             with self._lock:
                 self._telem["status"] = status
             return jsonify({"status": "success", "command": cmd, "motor_state": status})
+
+        # ---- MOTOR CALIBRATION & WHEEL TESTING -----------------------
+        @self.app.route("/api/motor/config", methods=["GET", "POST"])
+        def api_motor_config():
+            if request.method == "POST":
+                data = request.json or {}
+                if "left_polarity" in data:
+                    self.motors.left_polarity = int(data["left_polarity"])
+                if "right_polarity" in data:
+                    self.motors.right_polarity = int(data["right_polarity"])
+                self.motors.set_trim(data.get("left_trim"), data.get("right_trim"))
+                self.motors.save_settings()
+            return jsonify(self.motors.get_config())
+
+        @self.app.route("/api/motor/invert/<side>", methods=["POST"])
+        def api_motor_invert(side: str):
+            side = side.lower()
+            if side == "left":
+                new_pol = self.motors.flip_left_polarity()
+            elif side == "right":
+                new_pol = self.motors.flip_right_polarity()
+            else:
+                return jsonify({"status": "error", "message": "Invalid side"}), 400
+            return jsonify({"status": "success", "side": side, "polarity": new_pol, "config": self.motors.get_config()})
+
+        @self.app.route("/api/motor/test/<action>", methods=["POST"])
+        def api_motor_test(action: str):
+            self.motors.test_pulse(action, duration=1.2)
+            return jsonify({"status": "testing", "action": action})
 
         # ---- PROPORTIONAL JOYSTICK -----------------------------------
         @self.app.route("/api/joystick", methods=["POST"])
@@ -936,6 +972,31 @@ input[type=range]::-moz-range-thumb{
       <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:4px;line-height:1.35;font-weight:600;">
         <b>W A S D</b> Drive &bull; <b>Space</b> Stop<br><b>Q / E</b> Pan Camera &bull; <b>C</b> Center
       </div>
+
+      <!-- Wheel Direction Alignment & Test Drawer -->
+      <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:12px;padding:8px 10px;margin-top:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--txt2);text-transform:uppercase;">Wheel Direction Calibration</span>
+          <span id="motor-pol-badge" style="font-size:9px;font-weight:700;color:var(--txt3);">L: +1 | R: +1</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;" onclick="flipMotor('left')" title="Invert Left Wheels forward/reverse polarity">
+            ⟲ Flip Left
+          </button>
+          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;" onclick="flipMotor('right')" title="Invert Right Wheels forward/reverse polarity">
+            ⟲ Flip Right
+          </button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px;">
+          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;background:#F2F2F7;" onclick="testMotor('left_fwd')" title="Spin Left wheels forward for 1 second">
+            ▶ Test Left
+          </button>
+          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;background:#F2F2F7;" onclick="testMotor('right_fwd')" title="Spin Right wheels forward for 1 second">
+            ▶ Test Right
+          </button>
+        </div>
+      </div>
+
       <!-- Desktop capture buttons under dpad -->
       <div class="cap-row" style="margin-top:8px;">
         <button class="btn-cap btn-photo" onclick="capturePhoto()">
@@ -1608,6 +1669,34 @@ function showBtInfo(){
       alert('RC Car Bluetooth: Device RCCar-Alfin on Channel 1.');
     });
 }
+
+/* ── MOTOR DIRECTION CALIBRATION & TESTING ──────────── */
+function flipMotor(side){
+  fetch('/api/motor/invert/' + side, {method: 'POST'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      setMsg('Flipped ' + side + ' motor (' + (d.polarity>0?'+1':'-1') + ')', 'ok');
+      updateMotorBadge(d.config);
+    }).catch(function(){});
+}
+
+function testMotor(action){
+  fetch('/api/motor/test/' + action, {method: 'POST'})
+    .then(function(r){return r.json();})
+    .then(function(){
+      setMsg('Testing ' + action.replace('_', ' ') + '...', 'ok');
+    }).catch(function(){});
+}
+
+function updateMotorBadge(cfg){
+  var b = document.getElementById('motor-pol-badge');
+  if (b && cfg) {
+    b.textContent = 'L: ' + (cfg.left_polarity>0?'+1':'-1') + ' | R: ' + (cfg.right_polarity>0?'+1':'-1');
+  }
+}
+
+fetch('/api/motor/config').then(function(r){return r.json();}).then(updateMotorBadge).catch(function(){});
+
 
 /* ── CAPTURE ─────────────────────────────────────────── */
 var _recOn=false,_recSec=0,_recTim=null;

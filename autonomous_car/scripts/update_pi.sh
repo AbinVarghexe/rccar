@@ -52,6 +52,7 @@ mkdir -p dashboard vision tests hardware scripts
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/dashboard/app.py" -o "$TARGET_DIR/dashboard/app.py"
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/dashboard/template.html" -o "$TARGET_DIR/dashboard/template.html"
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/vision/camera.py" -o "$TARGET_DIR/vision/camera.py"
+curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/hardware/motors.py" -o "$TARGET_DIR/hardware/motors.py"
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/hardware/bluetooth_server.py" -o "$TARGET_DIR/hardware/bluetooth_server.py"
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/scripts/setup_wifi_hotspot.sh" -o "$TARGET_DIR/scripts/setup_wifi_hotspot.sh"
 chmod +x "$TARGET_DIR/scripts/setup_wifi_hotspot.sh" 2>/dev/null || true
