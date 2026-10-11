@@ -83,10 +83,24 @@ class WaypointConfig:
     turn_rate_deg_s: float = 45.0
 
 @dataclass
+class BluetoothConfig:
+    enabled: bool = True
+    channel: int = 1
+    device_name: str = "RCCar-Alfin"
+
+@dataclass
+class WiFiConfig:
+    hotspot_ssid: str = "RCCar-WiFi"
+    hotspot_password: str = "rccar12345"
+    hotspot_ip: str = "192.168.4.1"
+
+@dataclass
 class DashboardConfig:
     host: str = "0.0.0.0"
     port: int = 5000
     debug: bool = False
+    bluetooth: BluetoothConfig = field(default_factory=BluetoothConfig)
+    wifi: WiFiConfig = field(default_factory=WiFiConfig)
 
 @dataclass
 class AppConfig:
@@ -99,5 +113,8 @@ class AppConfig:
     yolo: YOLOConfig = field(default_factory=YOLOConfig)
     waypoint: WaypointConfig = field(default_factory=WaypointConfig)
     dashboard: DashboardConfig = field(default_factory=DashboardConfig)
+    bluetooth: BluetoothConfig = field(default_factory=BluetoothConfig)
+    wifi: WiFiConfig = field(default_factory=WiFiConfig)
 
 config = AppConfig()
+

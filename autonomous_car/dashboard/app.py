@@ -21,6 +21,7 @@ if parent_dir not in sys.path:
 from config import DashboardConfig
 from hardware.motors import MotorController
 from hardware.servo import ServoController
+from hardware.bluetooth_server import BluetoothServer
 from vision.camera import Camera
 
 
@@ -41,6 +42,24 @@ class DashboardServer:
                 self.camera.start()
             except Exception as e:
                 print(f"[DASHBOARD] Warning: camera.start() failed: {e}")
+
+        # Initialize Bluetooth RFCOMM Server
+        bt_cfg = getattr(self.config, "bluetooth", None)
+        bt_enabled = getattr(bt_cfg, "enabled", True) if bt_cfg else True
+        channel = getattr(bt_cfg, "channel", 1) if bt_cfg else 1
+        dev_name = getattr(bt_cfg, "device_name", "RCCar-Alfin") if bt_cfg else "RCCar-Alfin"
+        self.bluetooth = BluetoothServer(
+            motor_controller=self.motors,
+            servo_controller=self.servo,
+            channel=channel,
+            device_name=dev_name,
+        )
+        if bt_enabled:
+            try:
+                self.bluetooth.start()
+            except Exception as e:
+                print(f"[DASHBOARD] Warning: BluetoothServer start failed: {e}")
+
         self.app     = Flask(__name__)
 
         self._telem: Dict[str, Any] = {
@@ -75,7 +94,36 @@ class DashboardServer:
         @self.app.route("/api/telemetry")
         def api_telemetry():
             with self._lock:
-                return jsonify(self._telem)
+                telem = dict(self._telem)
+            if hasattr(self, "bluetooth") and self.bluetooth:
+                telem["bluetooth_connected"] = self.bluetooth.is_connected
+            return jsonify(telem)
+
+        @self.app.route("/api/bluetooth/status")
+        def api_bluetooth_status():
+            if hasattr(self, "bluetooth") and self.bluetooth:
+                return jsonify(self.bluetooth.get_status())
+            return jsonify({"available": False, "connected": False, "running": False})
+
+        @self.app.route("/api/network/status")
+        def api_network_status():
+            bt_stat = self.bluetooth.get_status() if hasattr(self, "bluetooth") and self.bluetooth else {}
+            import socket
+            ip_addr = "127.0.0.1"
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                ip_addr = s.getsockname()[0]
+                s.close()
+            except Exception:
+                pass
+            return jsonify({
+                "wifi": {
+                    "ip": ip_addr,
+                    "port": self.config.port,
+                },
+                "bluetooth": bt_stat,
+            })
 
         @self.app.route("/api/frame")
         def api_frame():
@@ -713,12 +761,20 @@ input[type=range]::-moz-range-thumb{
     </div>
     <div>
       <div class="app-name">RC Car</div>
-      <div class="app-sub">Raspberry Pi 3 &bull; Dashboard</div>
+      <div class="app-sub">Raspberry Pi 3 &bull; Dual Wireless (Wi-Fi + BT)</div>
     </div>
   </div>
-  <div class="live-pill">
-    <div class="live-dot"></div>
-    CONNECTED
+  <div style="display:flex;align-items:center;gap:8px;">
+    <!-- Wi-Fi Status Pill -->
+    <div class="live-pill" id="wifi-pill" title="Connected via Wi-Fi">
+      <div class="live-dot"></div>
+      <span id="wifi-txt">WI-FI</span>
+    </div>
+    <!-- Bluetooth Status Pill -->
+    <div class="live-pill" id="bt-pill" style="background:rgba(0,122,255,.1);border-color:rgba(0,122,255,.3);color:#007AFF;cursor:pointer;" onclick="showBtInfo()" title="Click for Bluetooth pairing and range details">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+      <span id="bt-txt">BT READY</span>
+    </div>
   </div>
 </div>
 
@@ -1515,7 +1571,7 @@ function motor(c){
   requestAnimationFrame(frame);
 }());
 
-/* ── TELEMETRY SYNC ──────────────────────────────────── */
+/* ── TELEMETRY & DUAL WIRELESS SYNC ──────────────────── */
 setInterval(function(){
   fetch('/api/telemetry')
     .then(function(r){return r.json();})
@@ -1523,8 +1579,35 @@ setInterval(function(){
       if(d.servo_angle!=null)setServo(Math.round(d.servo_angle));
       if(d.status)setStatus(d.status);
       if(d.trim_offset!=null)updateTrimDisplay(d.trim_offset);
+      var btPill=document.getElementById('bt-pill');
+      var btTxt=document.getElementById('bt-txt');
+      if(d.bluetooth_connected){
+        if(btPill){btPill.style.background='rgba(52,199,89,.15)';btPill.style.borderColor='rgba(52,199,89,.4)';btPill.style.color='#1E7E34';}
+        if(btTxt)btTxt.textContent='BT LINKED';
+      } else {
+        if(btPill){btPill.style.background='rgba(0,122,255,.1)';btPill.style.borderColor='rgba(0,122,255,.3)';btPill.style.color='#007AFF';}
+        if(btTxt)btTxt.textContent='BT READY';
+      }
     }).catch(function(){});
 },700);
+
+function showBtInfo(){
+  fetch('/api/bluetooth/status')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var status = d.connected ? ('Connected (' + (d.client||'Client') + ')') : (d.running ? 'Advertising (Ready to Pair)' : 'Inactive');
+      alert('RC CAR DUAL WIRELESS (WI-FI + BLUETOOTH):\n\n' +
+            '• Bluetooth Name: ' + (d.device_name || 'RCCar-Alfin') + '\n' +
+            '• RFCOMM Channel: ' + (d.channel || 1) + '\n' +
+            '• Status: ' + status + '\n\n' +
+            'HOW TO USE FOR MAXIMUM RANGE:\n' +
+            '1. Wi-Fi: High bandwidth video streaming & web dashboard.\n' +
+            '2. Bluetooth: Connect your phone or gamepad directly via Bluetooth for zero-latency fail-safe motor control without any router!\n' +
+            '   Commands: W/A/S/D, JOY:x,y, SERVO:angle');
+    }).catch(function(){
+      alert('RC Car Bluetooth: Device RCCar-Alfin on Channel 1.');
+    });
+}
 
 /* ── CAPTURE ─────────────────────────────────────────── */
 var _recOn=false,_recSec=0,_recTim=null;
