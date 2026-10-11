@@ -295,16 +295,23 @@ input[type=range]::-moz-range-thumb{
   border-radius:13px;
   background:#FFFFFF;
   border:1px solid #E5E5EA;
-  color:#1C1C1E;font-size:1.15rem;
-  display:flex;align-items:center;justify-content:center;
+  color:#1C1C1E;font-size:1.1rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
   cursor:pointer;
   transition:background .06s,transform .05s,box-shadow .06s;
   touch-action:manipulation;font-family:var(--rf);
   box-shadow:0 2px 8px rgba(0,0,0,.04);
+  line-height:1;
 }
-.d-btn:active{background:#1C1C1E;color:#FFFFFF;transform:scale(.9);}
+.d-btn:active, .d-btn.active{background:#1C1C1E;color:#FFFFFF;transform:scale(.92);box-shadow:0 2px 10px rgba(0,0,0,.18);}
 .d-stp{background:rgba(255,59,48,.15);border-color:rgba(255,59,48,.4);color:var(--red);}
-.d-stp:active{background:var(--red);color:#fff;}
+.d-stp:active, .d-stp.active{background:var(--red);color:#fff;transform:scale(.92);}
+.key-hint{
+  font-size:8px;font-weight:700;letter-spacing:.05em;
+  color:var(--txt3);margin-top:2px;text-transform:uppercase;
+}
+.d-btn:active .key-hint, .d-btn.active .key-hint{color:rgba(255,255,255,.7);}
+.d-stp:active .key-hint, .d-stp.active .key-hint{color:rgba(255,255,255,.9);}
 
 /* JOYSTICK */
 .joy-section{display:flex;flex-direction:column;align-items:center;gap:10px;}
@@ -620,19 +627,22 @@ input[type=range]::-moz-range-thumb{
 
     <!-- D-Pad (desktop only) -->
     <div class="dpad-section desktop-only">
-      <div class="lbl"><div class="lbl-dot"></div>D-Pad</div>
+      <div class="lbl"><div class="lbl-dot"></div>D-Pad &bull; WASD Keys</div>
       <div class="dpad-wrap">
         <div class="dpad">
           <div></div>
-          <button class="d-btn" onpointerdown="hold('forward')"  onpointerup="rel()" onpointercancel="rel()">&#9650;</button>
+          <button class="d-btn" id="dpad-up" onpointerdown="hold('forward')"  onpointerup="rel()" onpointercancel="rel()" title="Forward (W or Up Arrow)">&#9650;<span class="key-hint">W</span></button>
           <div></div>
-          <button class="d-btn" onpointerdown="hold('left')"     onpointerup="rel()" onpointercancel="rel()">&#9664;</button>
-          <button class="d-btn d-stp" onpointerdown="rel()">&#9632;</button>
-          <button class="d-btn" onpointerdown="hold('right')"    onpointerup="rel()" onpointercancel="rel()">&#9654;</button>
+          <button class="d-btn" id="dpad-left" onpointerdown="hold('left')"     onpointerup="rel()" onpointercancel="rel()" title="Left (A or Left Arrow)">&#9664;<span class="key-hint">A</span></button>
+          <button class="d-btn d-stp" id="dpad-stop" onpointerdown="rel()" title="Emergency Stop (Spacebar)">&#9632;<span class="key-hint">SPACE</span></button>
+          <button class="d-btn" id="dpad-right" onpointerdown="hold('right')"    onpointerup="rel()" onpointercancel="rel()" title="Right (D or Right Arrow)">&#9654;<span class="key-hint">D</span></button>
           <div></div>
-          <button class="d-btn" onpointerdown="hold('backward')" onpointerup="rel()" onpointercancel="rel()">&#9660;</button>
+          <button class="d-btn" id="dpad-down" onpointerdown="hold('backward')" onpointerup="rel()" onpointercancel="rel()" title="Reverse (S or Down Arrow)">&#9660;<span class="key-hint">S</span></button>
           <div></div>
         </div>
+      </div>
+      <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:4px;line-height:1.35;font-weight:600;">
+        <b>W A S D</b> Drive &bull; <b>Space</b> Stop<br><b>Q / E</b> Pan Camera &bull; <b>C</b> Center
       </div>
       <!-- Desktop capture buttons under dpad -->
       <div class="cap-row" style="margin-top:8px;">
@@ -1159,6 +1169,112 @@ function motor(c){
     ctx.beginPath();ctx.arc(kx,ky,5,0,Math.PI*2);
     ctx.fillStyle='#1C1C1E';ctx.fill();
   }
+
+  /* ── KEYBOARD WASD & ARROW CONTROLS ───────────────── */
+  var keys = { w: false, a: false, s: false, d: false };
+  var usingKey = false;
+
+  function updateKeyDrive() {
+    var dy = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+    var dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+
+    // Update D-pad visual button states
+    var u = document.getElementById('dpad-up');
+    var d = document.getElementById('dpad-down');
+    var l = document.getElementById('dpad-left');
+    var r = document.getElementById('dpad-right');
+    if (u) u.classList.toggle('active', keys.w);
+    if (d) d.classList.toggle('active', keys.s);
+    if (l) l.classList.toggle('active', keys.a);
+    if (r) r.classList.toggle('active', keys.d);
+
+    if (pid !== null) return; // Touch/mouse pointer has priority if active
+
+    if (dx === 0 && dy === 0) {
+      if (usingKey) {
+        usingKey = false;
+        tx = CX;
+        ty = CY;
+        la = 0; // force immediate dispatch in frame()
+      }
+      return;
+    }
+
+    usingKey = true;
+    var dist = Math.hypot(dx, dy);
+    var targetX = (dx / dist) * MAX;
+    var targetY = -(dy / dist) * MAX; // Screen Y is inverted relative to vehicle throttle
+
+    tx = CX + targetX;
+    ty = CY + targetY;
+    la = 0; // force immediate dispatch in frame()
+  }
+
+  window.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (e.repeat) return;
+
+    var k = e.key.toLowerCase();
+    var matched = false;
+
+    if (k === 'w' || e.key === 'ArrowUp')         { keys.w = true; matched = true; }
+    else if (k === 's' || e.key === 'ArrowDown')  { keys.s = true; matched = true; }
+    else if (k === 'a' || e.key === 'ArrowLeft')  { keys.a = true; matched = true; }
+    else if (k === 'd' || e.key === 'ArrowRight') { keys.d = true; matched = true; }
+    else if (e.code === 'Space' || k === 'x') {
+      keys.w = keys.a = keys.s = keys.d = false;
+      usingKey = false;
+      tx = CX; ty = CY; kx = CX; ky = CY;
+      nx = 0; ny = 0;
+      var stp = document.getElementById('dpad-stop');
+      if (stp) {
+        stp.classList.add('active');
+        setTimeout(function(){ stp.classList.remove('active'); }, 180);
+      }
+      sendJoy();
+      rel();
+      matched = true;
+    }
+    else if (k === 'q') {
+      nudgeServo(-5);
+      matched = true;
+    }
+    else if (k === 'e') {
+      nudgeServo(5);
+      matched = true;
+    }
+    else if (k === 'c') {
+      setServo(90);
+      matched = true;
+    }
+
+    if (matched) {
+      e.preventDefault();
+      updateKeyDrive();
+    }
+  });
+
+  window.addEventListener('keyup', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+    var k = e.key.toLowerCase();
+    var matched = false;
+
+    if (k === 'w' || e.key === 'ArrowUp')         { keys.w = false; matched = true; }
+    else if (k === 's' || e.key === 'ArrowDown')  { keys.s = false; matched = true; }
+    else if (k === 'a' || e.key === 'ArrowLeft')  { keys.a = false; matched = true; }
+    else if (k === 'd' || e.key === 'ArrowRight') { keys.d = false; matched = true; }
+
+    if (matched) {
+      e.preventDefault();
+      updateKeyDrive();
+    }
+  });
+
+  window.addEventListener('blur', function() {
+    keys.w = keys.a = keys.s = keys.d = false;
+    updateKeyDrive();
+  });
 
   requestAnimationFrame(frame);
 }());
