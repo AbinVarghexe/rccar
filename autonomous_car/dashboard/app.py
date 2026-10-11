@@ -104,6 +104,15 @@ class DashboardServer:
                 telem = dict(self._telem)
             if hasattr(self, "bluetooth") and self.bluetooth:
                 telem["bluetooth_connected"] = self.bluetooth.is_connected
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                telem["autonomous_enabled"] = self.autonomous_driver.is_enabled
+                telem["autonomous_mode"] = self.autonomous_driver.mode
+                telem["autonomous_action"] = self.autonomous_driver._current_decision.action.value
+                telem["autonomous_reason"] = self.autonomous_driver._current_decision.reason
+                telem["hazard_detected"] = self.autonomous_driver._current_decision.hazard_detected
+                telem["clearance_left"] = getattr(self.autonomous_driver._current_decision, "clearance_left", 1.0)
+                telem["clearance_right"] = getattr(self.autonomous_driver._current_decision, "clearance_right", 1.0)
+                telem["fps"] = round(self.autonomous_driver._fps, 1)
             return jsonify(telem)
 
         @self.app.route("/api/bluetooth/status")
@@ -134,13 +143,15 @@ class DashboardServer:
 
         @self.app.route("/api/frame")
         def api_frame():
+            overlay_arg = request.args.get("overlay")
+            with_overlay = (overlay_arg in ("1", "true")) if overlay_arg is not None else None
             if self.camera:
                 if not self.camera.is_initialized:
                     try:
                         self.camera.start()
                     except Exception:
                         pass
-                frame = self.camera.get_frame()
+                frame = self.camera.get_frame(with_overlay=with_overlay)
                 if frame:
                     r = Response(frame, mimetype="image/jpeg")
                     r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -154,6 +165,8 @@ class DashboardServer:
 
         @self.app.route("/video_feed")
         def video_feed():
+            overlay_arg = request.args.get("overlay")
+            with_overlay = (overlay_arg in ("1", "true")) if overlay_arg is not None else None
             if self.camera:
                 if not self.camera.is_initialized:
                     try:
@@ -161,10 +174,78 @@ class DashboardServer:
                     except Exception:
                         pass
                 return Response(
-                    self.camera.generate_mjpeg(),
+                    self.camera.generate_mjpeg(with_overlay=with_overlay),
                     mimetype="multipart/x-mixed-replace; boundary=frame"
                 )
             return Response(b"", status=204)
+
+        # ---- AUTONOMOUS DRIVING API ----------------------------------
+        @self.app.route("/api/auto/status")
+        def api_auto_status():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                return jsonify(self.autonomous_driver.get_status())
+            return jsonify({
+                "autonomous_enabled": False,
+                "mode": "disabled",
+                "action": "STOP",
+                "reason": "Autonomous driver not active",
+                "hazard_detected": False,
+                "server_ai": {"connected": False}
+            })
+
+        @self.app.route("/api/auto/toggle", methods=["POST"])
+        def api_auto_toggle():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                data = request.json or {}
+                if "enabled" in data:
+                    new_val = bool(data["enabled"])
+                else:
+                    new_val = not self.autonomous_driver.is_enabled
+                state = self.autonomous_driver.set_enabled(new_val)
+                with self._lock:
+                    self._telem["autonomous_enabled"] = state
+                return jsonify({"status": "success", "autonomous_enabled": state})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/auto/mode", methods=["POST"])
+        def api_auto_mode():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                data = request.json or {}
+                mode = data.get("mode", "hybrid")
+                curr = self.autonomous_driver.set_mode(mode)
+                return jsonify({"status": "success", "mode": curr})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/auto/config", methods=["POST"])
+        def api_auto_config():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                data = request.json or {}
+                self.autonomous_driver.set_config_params(data)
+                return jsonify({"status": "success", "config": self.autonomous_driver.get_status()})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/auto/overlay", methods=["GET", "POST"])
+        def api_auto_overlay():
+            if request.method == "POST":
+                data = request.json or {}
+                if "enabled" in data:
+                    new_val = bool(data["enabled"])
+                else:
+                    new_val = not self.camera.overlay_enabled
+                self.camera.set_overlay_enabled(new_val)
+                if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                    self.autonomous_driver.show_overlay = new_val
+            return jsonify({
+                "status": "success",
+                "overlay_enabled": self.camera.overlay_enabled
+            })
+
+        @self.app.route("/api/auto/scan", methods=["POST"])
+        def api_auto_scan():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                threading.Thread(target=self.autonomous_driver._execute_path_finding_scan, daemon=True).start()
+                return jsonify({"status": "success", "message": "Path discovery scan initiated"})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
 
         # ---- SERVO ---------------------------------------------------
         @self.app.route("/api/servo", methods=["POST"])

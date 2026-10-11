@@ -30,6 +30,12 @@ car.log
 media/
 tmp/
 .cache/
+*.jpg
+*.jpeg
+*.png
+*.mp4
+*.pt
+motor_settings.json
 
 # OS specific
 .DS_Store

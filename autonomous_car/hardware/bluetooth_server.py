@@ -25,8 +25,8 @@ from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-# Check native Linux Bluetooth socket support
-_BLUETOOTH_AVAILABLE = hasattr(socket, "AF_BLUETOOTH") and hasattr(socket, "BTPROTO_RFCOMM")
+# Check native Linux Bluetooth socket support (Raspberry Pi OS BlueZ stack)
+_BLUETOOTH_AVAILABLE = sys.platform.startswith("linux") and hasattr(socket, "AF_BLUETOOTH") and hasattr(socket, "BTPROTO_RFCOMM")
 
 
 class BluetoothServer:

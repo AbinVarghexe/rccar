@@ -51,7 +51,7 @@ class SensorConfig:
 
 @dataclass
 class ServoConfig:
-    pin: int = 18  # Raspberry Pi 3 GPIO 18 (Header Pin 12)
+    pin: int = 12  # Raspberry Pi 3 GPIO 12 (Physical Pin 32, Hardware PWM0)
     center_angle: int = 90
     left_angle: int = 150
     right_angle: int = 30
@@ -59,10 +59,20 @@ class ServoConfig:
 
 @dataclass
 class SerialConfig:
-    port: str = "/dev/ttyACM0" if sys.platform.startswith("linux") else "COM3"
+    port: str = "/dev/ttyACM0"
     baudrate: int = 115200
     timeout: float = 1.0
-    mock_serial: bool = False
+    mock_serial: bool = True
+
+@dataclass
+class MotorConfig:
+    in1_pin: int = 17      # Physical Pin 11
+    in2_pin: int = 27      # Physical Pin 13
+    in3_pin: int = 22      # Physical Pin 15
+    in4_pin: int = 23      # Physical Pin 16
+    in2_alt_pin: int = 18  # Physical Pin 12 (Dual-drive fallback)
+    left_polarity: int = 1
+    right_polarity: int = 1
 
 @dataclass
 class YOLOConfig:
@@ -103,18 +113,43 @@ class DashboardConfig:
     wifi: WiFiConfig = field(default_factory=WiFiConfig)
 
 @dataclass
+class AutonomousConfig:
+    enabled: bool = False
+    mode: str = "hybrid"   # "hybrid", "local_ai", "server_ai"
+    server_url: str = "http://127.0.0.1:8000"
+    server_ws_url: str = "ws://127.0.0.1:8000/ws"
+    cruise_speed: float = 0.55         # Default forward cruising throttle (0.0 - 1.0)
+    avoid_speed: float = 0.65          # Throttle when turning for obstacle avoidance
+    stop_area_threshold: float = 0.12  # Area ratio threshold to trigger emergency stop
+    slow_area_threshold: float = 0.05  # Area ratio threshold to slow down / steer
+    lane_width_ratio: float = 0.42     # Width ratio of center corridor
+    scan_on_block: bool = True         # Auto-pan servo to find clearer path when corridor blocked
+    show_ai_overlay: bool = True       # Overlay HUD bounding boxes and decision banner
+    model_name: str = "yolov8n.pt"
+    confidence_threshold: float = 0.35
+    target_classes: List[str] = field(
+        default_factory=lambda: [
+            "bus", "car", "truck", "person", "bicycle", "motorcycle",
+            "stop sign", "traffic cone", "chair", "bottle", "dog", "cat"
+        ]
+    )
+
+@dataclass
 class AppConfig:
     camera: CameraConfig = field(default_factory=CameraConfig)
     preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
     pid: PIDConfig = field(default_factory=PIDConfig)
     sensor: SensorConfig = field(default_factory=SensorConfig)
     servo: ServoConfig = field(default_factory=ServoConfig)
+    motor: MotorConfig = field(default_factory=MotorConfig)
     serial: SerialConfig = field(default_factory=SerialConfig)
     yolo: YOLOConfig = field(default_factory=YOLOConfig)
     waypoint: WaypointConfig = field(default_factory=WaypointConfig)
     dashboard: DashboardConfig = field(default_factory=DashboardConfig)
     bluetooth: BluetoothConfig = field(default_factory=BluetoothConfig)
     wifi: WiFiConfig = field(default_factory=WiFiConfig)
+    autonomous: AutonomousConfig = field(default_factory=AutonomousConfig)
 
 config = AppConfig()
+
 

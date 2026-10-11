@@ -115,10 +115,11 @@ body{
 .a-cam   {grid-column:1;grid-row:1/3;padding:16px;display:flex;flex-direction:column;min-height:0;}
 .a-stat  {grid-column:2;grid-row:1;padding:16px;}
 .a-servo {grid-column:2;grid-row:2;padding:16px;}
-.a-ctrl  {grid-column:1/-1;grid-row:3;}
+.a-auto  {grid-column:1/-1;grid-row:3;}
+.a-ctrl  {grid-column:1/-1;grid-row:4;}
 
 /* ─────────────────────────────────────────────────────────────
-   MOBILE OVERRIDES (EXACT ORDER: CAM -> JOYSTICK -> ACTIONS -> SERVO -> GALLERY)
+   MOBILE OVERRIDES (EXACT ORDER: CAM -> AUTO -> JOYSTICK -> ACTIONS)
 ───────────────────────────────────────────────────────────── */
 @media(max-width:680px){
   .layout{
@@ -128,10 +129,11 @@ body{
     gap: 12px;
   }
   .a-cam       { order: 1; padding: 12px; }
-  .a-ctrl      { order: 2; }
+  .a-auto      { order: 2; padding: 12px; }
+  .a-ctrl      { order: 3; }
   .a-stat      { display: none !important; }
   .a-servo     { display: none !important; }
-  .mobile-dock { order: 3; display: flex; }
+  .mobile-dock { order: 4; display: flex; }
 
   /* REMOVE D-PAD AND GALLERY SECTIONS COMPLETELY ON MOBILE VIEW */
   .desktop-only, .dpad-section, .gallery-wrap {
@@ -265,6 +267,109 @@ input[type=range]::-moz-range-thumb{
   background:#FFFFFF;color:var(--txt);border:1px solid #E5E5EA;
 }
 .sv-btn-sec:hover{background:#F2F2F7;}
+
+/* ─────────────────────────────────────────────────────────────
+   AUTONOMOUS DRIVING & EDGE AI CARD
+───────────────────────────────────────────────────────────── */
+.a-auto{
+  display:flex;flex-direction:column;gap:12px;padding:16px;
+}
+.auto-header{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+}
+.auto-header-badges{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.mode-pill, .server-pill{
+  background:#F2F2F7;border:1px solid #E5E5EA;border-radius:20px;
+  padding:4px 10px;font-size:10px;font-weight:700;color:var(--txt2);
+  letter-spacing:.05em;display:inline-flex;align-items:center;gap:5px;
+}
+.mode-pill.active{background:#1C1C1E;color:#FFFFFF;border-color:#1C1C1E;}
+.server-pill.connected{background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.3);color:var(--grn);}
+
+.auto-toggle-btn{
+  background:#1C1C1E;color:#FFFFFF;border:none;border-radius:20px;
+  padding:6px 14px;font-size:11px;font-weight:700;font-family:var(--rf);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);transition:all .15s;
+}
+.auto-toggle-btn.engaged{
+  background:var(--grn);box-shadow:0 0 12px rgba(52,199,89,.4);
+}
+.toggle-switch-dot{
+  width:8px;height:8px;border-radius:50%;background:#8E8E93;transition:background .2s;
+}
+.auto-toggle-btn.engaged .toggle-switch-dot{
+  background:#FFFFFF;box-shadow:0 0 6px #FFFFFF;
+}
+
+.auto-action-bar{
+  background:var(--card2);border:1px solid var(--bdr);
+  border-radius:14px;padding:12px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+}
+.auto-action-badge{
+  background:#1C1C1E;color:#FFFFFF;font-size:12px;font-weight:800;
+  letter-spacing:.06em;padding:5px 12px;border-radius:8px;
+  text-transform:uppercase;white-space:nowrap;
+}
+.auto-action-badge.stop{background:var(--red);box-shadow:0 0 10px rgba(255,59,48,.35);}
+.auto-action-badge.forward{background:var(--grn);}
+.auto-action-badge.avoid{background:var(--blu);}
+.auto-action-badge.slow{background:#FF9500;}
+.auto-action-badge.scan{background:#AF52DE;}
+
+.auto-action-reason{
+  font-size:12px;font-weight:600;color:var(--txt);flex:1;min-width:200px;
+}
+.auto-action-metrics{
+  display:flex;gap:6px;font-size:10px;font-weight:700;color:var(--txt2);
+}
+.auto-badge-pill{
+  background:#FFFFFF;border:1px solid var(--bdr);border-radius:6px;padding:3px 7px;
+}
+
+.auto-grid-controls{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:12px;
+}
+.auto-ctrl-box{
+  background:var(--card2);border:1px solid var(--bdr);border-radius:12px;
+  padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;
+}
+.auto-k{
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2);
+}
+.mode-btn-group{
+  display:flex;gap:5px;margin-top:6px;
+}
+.mode-btn{
+  flex:1;height:28px;border-radius:7px;border:1px solid var(--bdr);
+  background:#FFFFFF;color:var(--txt);font-size:10px;font-weight:700;
+  font-family:var(--rf);cursor:pointer;transition:all .12s;
+}
+.mode-btn.active{
+  background:#1C1C1E;color:#FFFFFF;border-color:#1C1C1E;
+}
+.clearance-row{
+  display:flex;flex-direction:column;gap:5px;margin-top:6px;
+}
+.clearance-item{
+  display:flex;align-items:center;gap:6px;font-size:10px;color:var(--txt2);font-weight:600;
+}
+.clearance-bar-wrap{
+  flex:1;height:6px;background:#E5E5EA;border-radius:3px;overflow:hidden;
+}
+.clearance-bar{
+  height:100%;background:var(--grn);border-radius:3px;transition:width .2s;
+}
+.server-input{
+  flex:1;height:28px;border:1px solid var(--bdr);border-radius:6px;
+  padding:0 8px;font-size:11px;font-family:var(--rf);background:#FFFFFF;
+}
 
 /* ─────────────────────────────────────────────────────────────
    CONTROLS ROW (bottom)
@@ -520,6 +625,14 @@ input[type=range]::-moz-range-thumb{
         <button class="tool-btn" id="btn-fit" onclick="toggleFitMode()" title="Toggle Fit Uncropped vs Fill">
           Fit
         </button>
+        <button class="tool-btn active" id="btn-ai-overlay" onclick="toggleHudOverlay()" title="Toggle AI Bounding Boxes & Corridor HUD">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          AI HUD
+        </button>
+        <button class="tool-btn" id="btn-quick-auto" onclick="toggleAutoDrive()" title="Toggle Autonomous Driving Mode (Key: A)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
+          Auto Drive
+        </button>
       </div>
     </div>
     
@@ -627,6 +740,90 @@ input[type=range]::-moz-range-thumb{
       <button class="sv-btn sv-btn-sec" style="font-size:10px;height:28px;color:var(--txt3);" onclick="resetServoTrim()" title="Reset calibration offset to 0°">
         Reset Trim
       </button>
+    </div>
+  </div>
+
+  <!-- AUTONOMOUS DRIVING & AI PERCEPTION CARD -->
+  <div class="card a-auto" id="auto-card">
+    <div class="auto-header">
+      <div class="lbl">
+        <div class="lbl-dot" id="auto-dot"></div>
+        Autonomous Driving &bull; Edge Perception
+      </div>
+      <div class="auto-header-badges">
+        <span class="mode-pill" id="auto-mode-badge">MODE: HYBRID</span>
+        <span class="server-pill" id="auto-server-badge">EDGE SERVER: STANDBY</span>
+        <button class="auto-toggle-btn" id="btn-auto-toggle" onclick="toggleAutoDrive()">
+          <span class="toggle-switch-dot" id="auto-switch-dot"></span>
+          <span id="auto-toggle-label">ENGAGE AUTO DRIVE</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Action Decision Banner -->
+    <div class="auto-action-bar" id="auto-action-bar">
+      <div class="auto-action-badge" id="auto-action-badge">STANDBY</div>
+      <div class="auto-action-reason" id="auto-action-reason">Manual driving control active. Press 'Engage Auto Drive' or press Key [A].</div>
+      <div class="auto-action-metrics">
+        <span class="auto-badge-pill" id="auto-fps-badge">0.0 FPS</span>
+        <span class="auto-badge-pill" id="auto-haz-badge" style="color:var(--grn);">CLEAR</span>
+      </div>
+    </div>
+
+    <!-- Control Strips: Driving Modes, Clearance, Speed, and Server AI -->
+    <div class="auto-grid-controls">
+      <!-- 1. Mode Selector -->
+      <div class="auto-ctrl-box">
+        <div class="auto-k">Driving Mode</div>
+        <div class="mode-btn-group">
+          <button class="mode-btn active" id="btn-mode-hybrid" onclick="setAutoMode('hybrid')">Hybrid</button>
+          <button class="mode-btn" id="btn-mode-local" onclick="setAutoMode('local_ai')">Local Vision</button>
+          <button class="mode-btn" id="btn-mode-server" onclick="setAutoMode('server_ai')">Server AI</button>
+        </div>
+      </div>
+
+      <!-- 2. Path Clearance Discovery -->
+      <div class="auto-ctrl-box">
+        <div class="auto-k">Path Clearance Discovery</div>
+        <div class="clearance-row">
+          <div class="clearance-item">
+            <span style="width:36px;">Left:</span>
+            <div class="clearance-bar-wrap"><div class="clearance-bar" id="bar-left" style="width:100%"></div></div>
+            <b id="val-clear-left">100%</b>
+          </div>
+          <div class="clearance-item">
+            <span style="width:36px;">Right:</span>
+            <div class="clearance-bar-wrap"><div class="clearance-bar" id="bar-right" style="width:100%"></div></div>
+            <b id="val-clear-right">100%</b>
+          </div>
+        </div>
+        <button class="tool-btn" onclick="triggerPathScan()" title="Pan camera servo to evaluate left vs right path clearance" style="margin-top:6px;justify-content:center;">
+          ⟳ Scan Clearance Sweep
+        </button>
+      </div>
+
+      <!-- 3. Cruise Speed Limit -->
+      <div class="auto-ctrl-box">
+        <div class="auto-k">Cruise Speed Limit &bull; <b id="val-cruise-spd">55%</b></div>
+        <input type="range" id="sl-cruise" min="25" max="100" value="55" oninput="updateCruiseSpeed(this.value)" style="--pct:55%;margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--txt3);font-weight:600;margin-top:4px;">
+          <span>Crawl (25%)</span><span>Cruising</span><span>Fast (100%)</span>
+        </div>
+      </div>
+
+      <!-- 4. Edge Server IP & Overlay -->
+      <div class="auto-ctrl-box">
+        <div class="auto-k">Edge AI Server & Overlay</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input type="text" id="input-server-url" value="http://127.0.0.1:8000" placeholder="http://192.168.1.X:8000" class="server-input">
+          <button class="tool-btn" onclick="saveServerUrl()">Connect</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button class="tool-btn active" id="btn-toggle-hud" onclick="toggleHudOverlay()" style="flex:1;justify-content:center;">
+            AI HUD Overlay: ON
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1489,6 +1686,224 @@ function loadGallery(){
       });
     }).catch(function(){});
 }
+
+/* ── AUTONOMOUS DRIVING & AI PERCEPTION CONTROLLER ── */
+var autoDrivingState = {
+  enabled: false,
+  mode: 'hybrid',
+  action: 'STOP',
+  reason: 'Standby',
+  hazard: false,
+  clearance_l: 1.0,
+  clearance_r: 1.0,
+  fps: 0.0,
+  server_connected: false,
+  server_latency: 0,
+  overlay_enabled: true
+};
+
+function pollAutoStatus(){
+  fetch('/api/auto/status')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      autoDrivingState.enabled = !!d.autonomous_enabled;
+      autoDrivingState.mode = (d.mode || 'hybrid').toLowerCase();
+      autoDrivingState.action = (d.action || 'STOP').toUpperCase();
+      autoDrivingState.reason = d.reason || 'Standby';
+      autoDrivingState.hazard = !!d.hazard_detected;
+      autoDrivingState.clearance_l = (d.clearance_left != null) ? d.clearance_left : 1.0;
+      autoDrivingState.clearance_r = (d.clearance_right != null) ? d.clearance_right : 1.0;
+      autoDrivingState.fps = d.fps || 0.0;
+      autoDrivingState.overlay_enabled = d.show_overlay !== false;
+
+      var srv = d.server_ai || {};
+      autoDrivingState.server_connected = !!srv.connected;
+      autoDrivingState.server_latency = srv.latency_ms || 0;
+
+      updateAutoUI();
+    }).catch(function(){});
+}
+
+function updateAutoUI(){
+  // 1. Toggle Button
+  var btnToggle = document.getElementById('btn-auto-toggle');
+  var lblToggle = document.getElementById('auto-toggle-label');
+  var quickAuto = document.getElementById('btn-quick-auto');
+  var autoDot = document.getElementById('auto-dot');
+
+  if (autoDrivingState.enabled) {
+    if (btnToggle) btnToggle.classList.add('engaged');
+    if (lblToggle) lblToggle.textContent = 'AUTO DRIVE ACTIVE';
+    if (quickAuto) quickAuto.classList.add('active');
+    if (autoDot) autoDot.style.background = 'var(--grn)';
+  } else {
+    if (btnToggle) btnToggle.classList.remove('engaged');
+    if (lblToggle) lblToggle.textContent = 'ENGAGE AUTO DRIVE';
+    if (quickAuto) quickAuto.classList.remove('active');
+    if (autoDot) autoDot.style.background = 'var(--txt2)';
+  }
+
+  // 2. Mode Badges
+  var modeBadge = document.getElementById('auto-mode-badge');
+  if (modeBadge) modeBadge.textContent = 'MODE: ' + autoDrivingState.mode.toUpperCase();
+
+  ['hybrid', 'local_ai', 'server_ai'].forEach(function(m){
+    var b = document.getElementById('btn-mode-' + (m === 'local_ai' ? 'local' : (m === 'server_ai' ? 'server' : 'hybrid')));
+    if (b) b.classList.toggle('active', autoDrivingState.mode === m);
+  });
+
+  // 3. Server Badge
+  var srvBadge = document.getElementById('auto-server-badge');
+  if (srvBadge) {
+    if (autoDrivingState.server_connected) {
+      srvBadge.className = 'server-pill connected';
+      srvBadge.textContent = 'EDGE SERVER: ACTIVE (' + autoDrivingState.server_latency + 'ms)';
+    } else {
+      srvBadge.className = 'server-pill';
+      srvBadge.textContent = 'EDGE SERVER: STANDBY';
+    }
+  }
+
+  // 4. Action Decision Badge & Reason
+  var actBadge = document.getElementById('auto-action-badge');
+  if (actBadge) {
+    actBadge.textContent = autoDrivingState.action;
+    actBadge.className = 'auto-action-badge';
+    if (autoDrivingState.action === 'STOP') actBadge.classList.add('stop');
+    else if (autoDrivingState.action === 'FORWARD') actBadge.classList.add('forward');
+    else if (autoDrivingState.action === 'LEFT' || autoDrivingState.action === 'RIGHT') actBadge.classList.add('avoid');
+    else if (autoDrivingState.action === 'SLOW') actBadge.classList.add('slow');
+    else if (autoDrivingState.action === 'SCAN') actBadge.classList.add('scan');
+  }
+
+  var reasonEl = document.getElementById('auto-action-reason');
+  if (reasonEl) reasonEl.textContent = autoDrivingState.reason;
+
+  // 5. Diagnostics
+  var fpsEl = document.getElementById('auto-fps-badge');
+  if (fpsEl) fpsEl.textContent = autoDrivingState.fps.toFixed(1) + ' FPS';
+
+  var hazEl = document.getElementById('auto-haz-badge');
+  if (hazEl) {
+    if (autoDrivingState.hazard) {
+      hazEl.textContent = 'HAZARD AHEAD';
+      hazEl.style.color = 'var(--red)';
+      hazEl.style.borderColor = 'rgba(255,59,48,.4)';
+    } else {
+      hazEl.textContent = 'PATH CLEAR';
+      hazEl.style.color = 'var(--grn)';
+      hazEl.style.borderColor = 'var(--bdr)';
+    }
+  }
+
+  // 6. Clearance Meters
+  var pctL = Math.round(autoDrivingState.clearance_l * 100);
+  var pctR = Math.round(autoDrivingState.clearance_r * 100);
+  var barL = document.getElementById('bar-left');
+  var barR = document.getElementById('bar-right');
+  var valL = document.getElementById('val-clear-left');
+  var valR = document.getElementById('val-clear-right');
+
+  if (barL) {
+    barL.style.width = pctL + '%';
+    barL.style.background = pctL < 40 ? 'var(--red)' : (pctL < 70 ? '#FF9500' : 'var(--grn)');
+  }
+  if (barR) {
+    barR.style.width = pctR + '%';
+    barR.style.background = pctR < 40 ? 'var(--red)' : (pctR < 70 ? '#FF9500' : 'var(--grn)');
+  }
+  if (valL) valL.textContent = pctL + '%';
+  if (valR) valR.textContent = pctR + '%';
+
+  // 7. AI Overlay Buttons
+  var btnHud = document.getElementById('btn-toggle-hud');
+  var btnHudCam = document.getElementById('btn-ai-overlay');
+  if (btnHud) {
+    btnHud.textContent = 'AI HUD Overlay: ' + (autoDrivingState.overlay_enabled ? 'ON' : 'OFF');
+    btnHud.classList.toggle('active', autoDrivingState.overlay_enabled);
+  }
+  if (btnHudCam) {
+    btnHudCam.classList.toggle('active', autoDrivingState.overlay_enabled);
+  }
+}
+
+function toggleAutoDrive(){
+  fetch('/api/auto/toggle', {method: 'POST'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      autoDrivingState.enabled = !!d.autonomous_enabled;
+      setMsg(autoDrivingState.enabled ? '✓ Autonomous Mode Engaged' : 'Manual Mode Active', 'ok');
+      updateAutoUI();
+    }).catch(function(){});
+}
+
+function setAutoMode(mode){
+  fetch('/api/auto/mode', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({mode: mode})
+  }).then(function(r){return r.json();})
+    .then(function(d){
+      autoDrivingState.mode = d.mode;
+      setMsg('Mode: ' + d.mode.toUpperCase(), 'ok');
+      updateAutoUI();
+    }).catch(function(){});
+}
+
+function updateCruiseSpeed(val){
+  var pct = parseInt(val, 10);
+  var lbl = document.getElementById('val-cruise-spd');
+  if (lbl) lbl.textContent = pct + '%';
+  var sl = document.getElementById('sl-cruise');
+  if (sl) sl.style.setProperty('--pct', pct + '%');
+
+  fetch('/api/auto/config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({cruise_speed: pct / 100.0})
+  }).catch(function(){});
+}
+
+function toggleHudOverlay(){
+  fetch('/api/auto/overlay', {method: 'POST'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      autoDrivingState.overlay_enabled = !!d.overlay_enabled;
+      setMsg('AI HUD Overlay: ' + (d.overlay_enabled ? 'ON' : 'OFF'), 'ok');
+      updateAutoUI();
+    }).catch(function(){});
+}
+
+function triggerPathScan(){
+  setMsg('Initiating Path Clearance Sweep...', 'ok');
+  fetch('/api/auto/scan', {method: 'POST'}).catch(function(){});
+}
+
+function saveServerUrl(){
+  var inp = document.getElementById('input-server-url');
+  if (!inp || !inp.value) return;
+  var url = inp.value.trim();
+  fetch('/api/auto/config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({server_url: url})
+  }).then(function(){
+    setMsg('Updated Server URL: ' + url, 'ok');
+    pollAutoStatus();
+  }).catch(function(){});
+}
+
+// Global shortcut: Key [Z] toggles Auto Drive, [Spacebar] Emergency Stops
+window.addEventListener('keydown', function(e){
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+  if (e.key === 'z' || e.key === 'Z') {
+    e.preventDefault();
+    toggleAutoDrive();
+  }
+});
+
+pollAutoStatus();
+setInterval(pollAutoStatus, 400);
 
 loadGallery();
 setInterval(loadGallery,15000);

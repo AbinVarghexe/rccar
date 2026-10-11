@@ -71,6 +71,9 @@ class Camera:
         self._backend:      str              = "none"
         self._lock          = threading.Lock()
         self._frame:        Optional[bytes]  = None
+        self._latest_bgr:   Optional[object] = None
+        self._hud_annotator: Optional[object] = None
+        self.overlay_enabled: bool           = True
         self._running:      bool             = False
         self._thread:       Optional[threading.Thread] = None
         self.is_initialized: bool            = False
@@ -205,22 +208,23 @@ class Camera:
 
     # ------------------------------------------------------------------ #
     def _capture_loop(self) -> None:
-        """Continuously captures JPEG frames from active backend."""
+        """Continuously captures JPEG frames and BGR arrays from active backend."""
         while self._running and self.is_initialized:
             try:
                 jpeg_bytes = None
+                bgr_img = None
 
                 # Backend 1: Picamera2
                 if self._backend == "picamera2" and self._camera:
                     bio = io.BytesIO()
                     self._camera.capture_file(bio, format="jpeg")
                     raw_bytes = bio.getvalue()
-                    if raw_bytes and (self.flip_h or self.flip_v or self.rotation != 0) and USE_CV2:
-                        # Apply server-side transforms if configured
+                    if raw_bytes and USE_CV2:
                         arr = np.frombuffer(raw_bytes, dtype=np.uint8)
                         img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
                         if img is not None:
                             img = self._apply_transforms_cv2(img)
+                            bgr_img = img
                             _, enc = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
                             raw_bytes = enc.tobytes()
                     jpeg_bytes = raw_bytes
@@ -230,6 +234,7 @@ class Camera:
                     ret, frame = self._cv2_cap.read()
                     if ret and frame is not None:
                         frame = self._apply_transforms_cv2(frame)
+                        bgr_img = frame
                         _, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
                         jpeg_bytes = enc.tobytes()
                     else:
@@ -244,6 +249,9 @@ class Camera:
                             data = resp.read()
                             if len(data) > 500:
                                 jpeg_bytes = data
+                                if USE_CV2:
+                                    arr = np.frombuffer(data, dtype=np.uint8)
+                                    bgr_img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
                     except Exception:
                         time.sleep(0.1)
 
@@ -268,12 +276,15 @@ class Camera:
                     cv2.putText(frame, "STATUS: STREAM ACTIVE", (20, self.height - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (50, 199, 89), 2)
 
                     frame = self._apply_transforms_cv2(frame)
+                    bgr_img = frame
                     _, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
                     jpeg_bytes = enc.tobytes()
 
                 if jpeg_bytes:
                     with self._lock:
                         self._frame = jpeg_bytes
+                        if bgr_img is not None:
+                            self._latest_bgr = bgr_img
                     # Feed recording buffer if active
                     with self._record_lock:
                         if self._recording:
@@ -305,19 +316,57 @@ class Camera:
         return img
 
     # ------------------------------------------------------------------ #
-    def get_frame(self) -> Optional[bytes]:
-        """Returns the latest JPEG frame (thread-safe)."""
+    def get_bgr_frame(self) -> Optional[np.ndarray]:
+        """Returns the latest raw BGR frame matrix for perception and autonomous driving."""
         with self._lock:
-            return self._frame
+            if self._latest_bgr is not None:
+                return self._latest_bgr.copy()
+            if self._frame and USE_CV2:
+                try:
+                    arr = np.frombuffer(self._frame, dtype=np.uint8)
+                    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                except Exception:
+                    pass
+            return None
 
-    def generate_mjpeg(self):
-        """Generator for MJPEG multipart streaming."""
+    def set_hud_annotator(self, annotator_fn) -> None:
+        """Sets callback function fn(bgr_frame) -> annotated_bgr_frame for HUD rendering."""
+        with self._lock:
+            self._hud_annotator = annotator_fn
+
+    def set_overlay_enabled(self, enabled: bool) -> bool:
+        """Toggle AI visual overlays on live video stream."""
+        with self._lock:
+            self.overlay_enabled = bool(enabled)
+            return self.overlay_enabled
+
+    def get_frame(self, with_overlay: Optional[bool] = None) -> Optional[bytes]:
+        """Returns the latest JPEG frame (with or without HUD overlay)."""
+        use_overlay = self.overlay_enabled if with_overlay is None else bool(with_overlay)
+        with self._lock:
+            bgr = self._latest_bgr
+            annotator = self._hud_annotator
+            raw_jpeg = self._frame
+
+        if use_overlay and annotator and bgr is not None and USE_CV2:
+            try:
+                annotated = annotator(bgr)
+                if annotated is not None:
+                    _, enc = cv2.imencode(".jpg", annotated, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                    return enc.tobytes()
+            except Exception as e:
+                logger.debug(f"[CAMERA] Overlay render error: {e}")
+
+        return raw_jpeg
+
+    def generate_mjpeg(self, with_overlay: Optional[bool] = None):
+        """Generator for MJPEG multipart streaming with optional HUD overlay."""
         while self._running or self.is_initialized:
             if not self.is_initialized:
                 time.sleep(0.1)
                 frame = self._create_standby_frame("CAMERA STARTING...")
             else:
-                frame = self.get_frame() or self._create_standby_frame("ACQUIRING FRAME...")
+                frame = self.get_frame(with_overlay=with_overlay) or self._create_standby_frame("ACQUIRING FRAME...")
 
             if frame:
                 yield (
@@ -332,12 +381,12 @@ class Camera:
     # ------------------------------------------------------------------ #
     #  PHOTO CAPTURE
     # ------------------------------------------------------------------ #
-    def capture_photo(self) -> Optional[str]:
+    def capture_photo(self, with_overlay: Optional[bool] = None) -> Optional[str]:
         """
         Save the current frame as a JPEG photo.
         Returns the filename (not full path) on success, None on failure.
         """
-        frame = self.get_frame()
+        frame = self.get_frame(with_overlay=with_overlay)
         if not frame:
             logger.error("No frame available for photo capture.")
             return None
