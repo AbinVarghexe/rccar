@@ -6,6 +6,7 @@ Supports: JPEG photo capture, H264 video recording alongside live preview.
 
 import io
 import os
+import sys
 import time
 import logging
 import threading
@@ -15,6 +16,11 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 USE_PICAMERA2 = False
+
+# Ensure system dist-packages is accessible on Pi even if running inside a venv
+for _p in ["/usr/lib/python3/dist-packages", "/usr/local/lib/python3/dist-packages"]:
+    if os.path.exists(_p) and _p not in sys.path:
+        sys.path.append(_p)
 
 try:
     from picamera2 import Picamera2
@@ -117,78 +123,76 @@ class Camera:
     # ------------------------------------------------------------------ #
     def start(self) -> "Camera":
         """Initialize camera backend (Picamera2 first, OpenCV fallback) and start thread."""
-        # 1. Try Picamera2 (CSI Camera OV5647)
+        # 1. Try Picamera2 (CSI Camera OV5647 / Pi Camera v1/v2/v3)
         if USE_PICAMERA2:
+            print("[CAMERA] Attempting Picamera2 (libcamera / CSI) initialization...")
             try:
-                cam_info = Picamera2.global_camera_info()
-            except Exception as e:
-                logger.error(f"Could not query cameras via libcamera: {e}")
-                cam_info = []
-
-            if cam_info:
-                print(f"[CAMERA] Detected {len(cam_info)} CSI camera(s): {cam_info[0].get('Model', 'OV5647')}")
                 try:
+                    self._camera = Picamera2(0)
+                except Exception:
+                    self._camera = Picamera2()
+                config = self._camera.create_video_configuration(
+                    main={"size": (self.width, self.height)}
+                )
+                self._camera.configure(config)
+                self._camera.start()
+                time.sleep(0.6)   # sensor warm-up
+                self._backend = "picamera2"
+                self.is_initialized = True
+                self._running = True
+                self._thread = threading.Thread(
+                    target=self._capture_loop, daemon=True, name="camera-capture"
+                )
+                self._thread.start()
+                print(f"[CAMERA READY] Picamera2 CSI @ {self.width}x{self.height} streaming active")
+                return self
+            except Exception as e:
+                print(f"[CAMERA] Picamera2 init failed: {e}")
+                if self._camera:
                     try:
-                        self._camera = Picamera2(0)
-                    except TypeError:
-                        self._camera = Picamera2()
-                    config = self._camera.create_video_configuration(
-                        main={"size": (self.width, self.height)}
-                    )
-                    self._camera.configure(config)
-                    self._camera.start()
-                    time.sleep(0.8)   # sensor warm-up
-                    self._backend = "picamera2"
-                    self.is_initialized = True
-                    self._running = True
-                    self._thread = threading.Thread(
-                        target=self._capture_loop, daemon=True, name="camera-capture"
-                    )
-                    self._thread.start()
-                    print(f"[CAMERA READY] Picamera2 CSI @ {self.width}x{self.height} streaming active")
-                    return self
-                except Exception as e:
-                    logger.error(f"Picamera2 init failed: {e}")
-                    if self._camera:
-                        try:
-                            self._camera.close()
-                        except Exception:
-                            pass
-                    self._camera = None
+                        self._camera.close()
+                    except Exception:
+                        pass
+                self._camera = None
 
-        # 2. Try OpenCV (USB camera or V4L2 fallback across indices 0, 1, 2, 3)
+        # 2. Try OpenCV (V4L2 CSI driver bcm2835-v4l2 or USB WebCam)
         if USE_CV2:
-            print("[CAMERA] Attempting OpenCV VideoCapture fallback across indices [0, 1, 2, 3]...")
+            print("[CAMERA] Attempting OpenCV VideoCapture across indices [0, 1, 2, 3]...")
             for idx in [0, 1, 2, 3]:
                 try:
-                    cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
-                    if not cap.isOpened():
-                        cap = cv2.VideoCapture(idx)
+                    cap = cv2.VideoCapture(idx)
+                    if not cap.isOpened() and hasattr(cv2, "CAP_V4L2") and sys.platform.startswith("linux"):
+                        cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
+
                     if cap.isOpened():
-                        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
                         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
                         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
                         cap.set(cv2.CAP_PROP_FPS, 30)
-                        # Warm up read test
-                        for _ in range(3):
+
+                        # Warm-up read using native driver format (YUYV/BGR)
+                        ret, test_frame = cap.read()
+                        if not ret or test_frame is None:
+                            # Try MJPG if driver failed default
+                            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
                             ret, test_frame = cap.read()
-                            if ret and test_frame is not None:
-                                self._cv2_cap = cap
-                                self._backend = "cv2"
-                                self.is_initialized = True
-                                self._running = True
-                                self._thread = threading.Thread(
-                                    target=self._capture_loop, daemon=True, name="camera-capture"
-                                )
-                                self._thread.start()
-                                print(f"[CAMERA READY] OpenCV Camera (index {idx}) @ {self.width}x{self.height} streaming active")
-                                return self
+
+                        if ret and test_frame is not None:
+                            self._cv2_cap = cap
+                            self._backend = "cv2"
+                            self.is_initialized = True
+                            self._running = True
+                            self._thread = threading.Thread(
+                                target=self._capture_loop, daemon=True, name="camera-capture"
+                            )
+                            self._thread.start()
+                            print(f"[CAMERA READY] OpenCV Camera (index {idx}) @ {self.width}x{self.height} streaming active")
+                            return self
                         cap.release()
                 except Exception as e:
-                    logger.error(f"OpenCV VideoCapture index {idx} failed: {e}")
+                    print(f"[CAMERA] OpenCV index {idx} failed: {e}")
 
         # 3. Fallback: Synthetic Test Pattern Generator (Ensures Live Feed on Dashboard always works)
-        print("[CAMERA] Initializing Live Synthetic Test Pattern stream...")
+        print("[CAMERA] No physical sensor detected. Initializing Live Synthetic Test Pattern stream...")
         self._backend = "synthetic"
         self.is_initialized = True
         self._running = True
@@ -231,7 +235,19 @@ class Camera:
                     else:
                         time.sleep(0.05)
 
-                # Backend 3: Synthetic Live HUD Pattern Generator
+                # Backend 3: Remote Raspberry Pi Camera Feed
+                elif self._backend == "remote_pi" and getattr(self, "_remote_url", None):
+                    import urllib.request
+                    try:
+                        req = urllib.request.Request(self._remote_url, headers={"User-Agent": "RCCarClient/1.0"})
+                        with urllib.request.urlopen(req, timeout=1.5) as resp:
+                            data = resp.read()
+                            if len(data) > 500:
+                                jpeg_bytes = data
+                    except Exception:
+                        time.sleep(0.1)
+
+                # Backend 4: Synthetic Live HUD Pattern Generator
                 elif self._backend == "synthetic" and USE_CV2:
                     frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
                     frame[:] = (20, 20, 22)

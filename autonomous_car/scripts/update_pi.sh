@@ -54,11 +54,39 @@ curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomou
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/vision/camera.py" -o "$TARGET_DIR/vision/camera.py"
 curl -sSL "https://raw.githubusercontent.com/AbinVarghexe/rccar/master/autonomous_car/config.py" -o "$TARGET_DIR/config.py"
 
-# 5. Check camera device nodes
-echo "[*] Checking camera device nodes..."
-ls -l /dev/video* 2>/dev/null || echo "[NOTE] No /dev/video* devices found (using Picamera2 CSI or Synthetic feed fallback)"
+# 5. Enable system-site-packages in virtualenv if present (critical for picamera2 apt package)
+if [ -f "$TARGET_DIR/venv/pyvenv.cfg" ]; then
+  echo "[*] Enabling system-site-packages in virtualenv..."
+  sed -i 's/include-system-site-packages = false/include-system-site-packages = true/g' "$TARGET_DIR/venv/pyvenv.cfg" || true
+fi
 
-# 6. Restart systemd service if installed, or start in background
+# 6. Load Raspberry Pi CSI V4L2 kernel driver (required for OV5647 CSI under OpenCV /dev/video0)
+echo "[*] Loading bcm2835-v4l2 camera kernel module..."
+sudo modprobe bcm2835-v4l2 2>/dev/null || true
+if [ -f /etc/modules ] && ! grep -q "bcm2835-v4l2" /etc/modules; then
+  echo "bcm2835-v4l2" | sudo tee -a /etc/modules >/dev/null 2>&1 || true
+fi
+
+# 7. Check camera hardware detection
+echo ""
+echo "=== CAMERA HARDWARE DIAGNOSTICS ==="
+if command -v vcgencmd &>/dev/null; then
+  echo -n "[vcgencmd]: "
+  vcgencmd get_camera || true
+fi
+if command -v libcamera-hello &>/dev/null; then
+  echo "[libcamera]:"
+  libcamera-hello --list-cameras 2>/dev/null || true
+elif command -v rpicam-hello &>/dev/null; then
+  echo "[rpicam]:"
+  rpicam-hello --list-cameras 2>/dev/null || true
+fi
+echo "[Video Nodes]:"
+ls -l /dev/video* 2>/dev/null || echo "  [NOTE] No /dev/video* nodes active. If CSI camera is attached, check ribbon cable."
+echo "===================================="
+echo ""
+
+# 8. Restart systemd service if installed, or start in background
 if systemctl list-unit-files 2>/dev/null | grep -q "rccar.service"; then
   echo "[*] Restarting rccar.service..."
   sudo systemctl daemon-reload
