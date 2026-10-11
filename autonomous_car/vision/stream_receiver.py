@@ -1,6 +1,6 @@
 """
 Local Laptop Live Camera Receiver & Processor.
-Connects to the Raspberry Pi 3 live video feed (http://10.252.39.181:5000/api/frame or /video_feed)
+Connects to the Raspberry Pi 3 live video feed (http://10.29.99.181:5000/api/frame or /video_feed)
 and provides real-time OpenCV frames on your laptop for computer vision & autonomous processing.
 """
 
@@ -15,7 +15,7 @@ class RemoteCameraClient:
     Client for receiving live video frames from the Raspberry Pi 3 RC Car.
     """
 
-    def __init__(self, pi_ip: str = "10.252.39.181", port: int = 5000) -> None:
+    def __init__(self, pi_ip: str = "10.29.99.181", port: int = 5000) -> None:
         self.pi_ip: str = pi_ip
         self.port: int = port
         self.frame_url: str = f"http://{pi_ip}:{port}/api/frame"
@@ -51,7 +51,7 @@ class RemoteCameraClient:
 def main():
     print("=======================================================================")
     print(" LAPTOP LIVE CAMERA STREAM RECEIVER & PROCESSOR")
-    print(" Connecting to Pi at http://10.252.39.181:5000/api/frame...")
+    print(" Connecting to Pi at http://10.29.99.181:5000/api/frame...")
     print(" Press 'q' on the OpenCV window to exit.")
     print("=======================================================================")
 
