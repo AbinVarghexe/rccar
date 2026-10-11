@@ -42,22 +42,28 @@ autonomous_car/
 │   ├── serial_comm.py         # PySerial Arduino communication (FORWARD, LEFT, etc.)
 │   └── controller.py          # Vehicle Controller & Motor Driver Primitives
 │
-├── navigation/
+├── ai/
 │   ├── __init__.py
+│   ├── classes.py             # ActionEnum, BoundingBox, DecisionResult, DetectionResult
+│   ├── detector.py            # YOLOv8 inference wrapper with COCO class filtering
+│   ├── tracker.py             # ByteTrack object tracking & persistent IDs
+│   ├── risk_analyzer.py       # Looming TTC estimation & spatial hazard risk scoring
+│   ├── corridor_scanner.py    # OpenCV spatial corridor analysis & sector clearance
+│   ├── visualization.py       # HUD overlay, bounding boxes, corridor guidelines
+│   └── server_client.py       # Edge AI Server connector (self-driving-ai at port 8000)
+│
+├── navigation/
+│   ├── autonomous_driver.py   # Autonomous driver orchestrator (Bus stop, obstacle avoidance)
 │   ├── state_machine.py       # Finite State Machine (IDLE, FOLLOW_LANE, TURN, etc.)
 │   └── planner.py             # Sensor fusion & navigation planner
 │
 ├── dashboard/
 │   ├── __init__.py
-│   └── app.py                 # Flask server with live MJPEG streams & telemetry UI
-│
-├── utils/
-│   ├── __init__.py
-│   ├── fps.py                 # Smooth FPS calculation utility
-│   └── logger.py              # Console & file logger
+│   ├── app.py                 # Flask server with live MJPEG streams, AI HUD, & REST API
+│   └── template.html          # Apple-monochrome dashboard UI with Autonomous Driving card
 │
 ├── tests/                     # Comprehensive Unit Test Suite
-│   ├── __init__.py
+│   ├── test_autonomous_driver.py # End-to-end tests for auto drive, bus stop & avoidance
 │   ├── test_vision.py
 │   ├── test_control.py
 │   ├── test_sensors.py
