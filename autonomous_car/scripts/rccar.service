@@ -7,9 +7,9 @@ Wants=network-online.target
 Type=simple
 User=alfin
 WorkingDirectory=/home/alfin/autonomous_car
-ExecStart=/home/alfin/autonomous_car/venv/bin/python3 /home/alfin/autonomous_car/dashboard/app.py
+ExecStart=/home/alfin/autonomous_car/venv/bin/python3 /home/alfin/autonomous_car/scripts/test_dashboard.py
 Restart=always
-RestartSec=5
+RestartSec=3
 Environment=PYTHONUNBUFFERED=1
 
 [Install]

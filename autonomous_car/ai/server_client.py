@@ -5,7 +5,7 @@ import threading
 from typing import Optional, List, Dict, Any
 import requests
 
-from autonomous_car.ai.classes import DecisionResult, ActionEnum, DetectionResult, BoundingBox
+from ai.classes import DecisionResult, ActionEnum, DetectionResult, BoundingBox
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class ServerAIClient:
                         self._last_update_time = time.time()
                         self._latest_decision = DecisionResult(
                             action=action,
-                            reason=f"[Server Model] {reason}",
+                            reason=reason,
                             timestamp=ts,
                             hazard_detected=(action in (ActionEnum.STOP, ActionEnum.WAIT)),
                             source="server"

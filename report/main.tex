@@ -1,0 +1,114 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage[top=3cm,bottom=2.5cm,left=3cm,right=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{sectsty}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+% Chapter and Section typography
+\chapterfont{\Large\centering\MakeUppercase}
+\sectionfont{\large\bfseries}
+\subsectionfont{\normalsize\bfseries}
+\renewcommand{\bibname}{REFERENCES}
+
+% Listings styling for Python code in Appendix
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.96}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Headers and Footers
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{}
+\rhead{\nouppercase{\textit{\leftmark}}}
+\lfoot{\textit{Department of Electronics and Communication Engineering , AJCE}}
+\cfoot{}
+\rfoot{\textit{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Line Spacing
+\onehalfspacing
+
+\begin{document}
+
+% ----------------- FRONT MATTER -----------------
+\input{title}
+\input{certificate}
+\input{declaration}
+
+\clearpage
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\addcontentsline{toc}{chapter}{ACKNOWLEDGEMENT}
+\input{ackn}
+
+\clearpage
+\addcontentsline{toc}{chapter}{ABSTRACT}
+\input{abstract}
+
+% Table of Contents
+\clearpage
+\tableofcontents
+
+% List of Figures
+\clearpage
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\listoffigures
+
+% Abbreviations
+\clearpage
+\addcontentsline{toc}{chapter}{ABBREVIATIONS}
+\input{Abbrevations}
+
+% ----------------- BODY MATTER -----------------
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{intro}
+\input{litsurvey}
+\input{implementation}
+\input{results}
+\input{conclusion}
+
+% References
+\clearpage
+\input{bibilo}
+
+% Appendices
+\clearpage
+\input{Appendix}
+
+\end{document}

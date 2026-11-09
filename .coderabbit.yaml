@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: true
+
+  path_filters:
+    - "!**/*.log"
+    - "!**/*.pdf"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.tflite"
+    - "!**/*.weights"
+    - "!**/*.onnx"
+    - "!**/*.pt"
+    - "!**/*.pth"
+    - "!**/.pi_deploy_manifest.json"
+    - "!**/node_modules/**"
+    - "!**/.git/**"
+    - "!**/venv/**"
+    - "!**/__pycache__/**"
+    - "!**/.pytest_cache/**"
+
+  path_instructions:
+    - path: "autonomous_car/hardware/**"
+      instructions: |
+        CRITICAL HARDWARE SAFETY:
+        - Check GPIO pin assignments against vehicle pinout: IN1=GPIO 17, IN2=GPIO 18, IN3=GPIO 22, IN4=GPIO 23, Servo PWM=GPIO 12, Trig=GPIO 24, Echo=GPIO 25.
+        - Ensure safe cleanup and fail-safe stop logic so motors never latch on or run unchecked during exceptions.
+        - Ensure PWM bounds (duty cycle 0-100) are respected.
+
+    - path: "autonomous_car/ai/**"
+      instructions: |
+        Focus on real-time inference latency on Raspberry Pi 4, thread safety, graceful fallback when models fail to detect, and non-blocking I/O.
+
+    - path: "autonomous_car/navigation/**"
+      instructions: |
+        Verify collision avoidance failsafes, obstacle distance thresholds (emergency stop under 20cm), steering angle limits, and state transitions.
+
+    - path: "autonomous_car/dashboard/**"
+      instructions: |
+        Verify Flask web route security, clean error responses, efficient telemetry streaming, and prevent blocking calls inside request handlers.
+
+  tools:
+    github-checks:
+      enabled: true
+
+auto_review:
+  enabled: true
+  drafts: false
+  base_branches:
+    - master
+    - main
+
+chat:
+  auto_reply: true

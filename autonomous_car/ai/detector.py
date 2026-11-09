@@ -9,7 +9,8 @@ parent_dir = os.path.dirname(curr_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from autonomous_car.ai.classes import DetectionResult, BoundingBox
+from ai.classes import DetectionResult, BoundingBox
+from ai.tflite_detector import TFLiteYOLODetector
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +38,22 @@ class YOLODetector:
         self.iou = iou
         self.target_classes = [c.lower() for c in target_classes] if target_classes else None
         self.model = None
+        self.tflite_model = None
         self.is_initialized = False
 
+        self.num_threads = 4
         # Resolve model path relative to car directory
         candidate_paths = [
             model_path,
             os.path.join(parent_dir, model_path),
-            os.path.join(parent_dir, "yolov8n.pt"),
-            os.path.join(os.path.dirname(parent_dir), "self-driving-ai", "yolov8n.pt")
+            os.path.join(parent_dir, "models", os.path.basename(model_path)),
+            os.path.join(os.path.dirname(parent_dir), model_path),
         ]
+        if not model_path.lower().endswith(".tflite"):
+            candidate_paths.extend([
+                os.path.join(parent_dir, "yolov8n.pt"),
+                os.path.join(os.path.dirname(parent_dir), "self-driving-ai", "yolov8n.pt"),
+            ])
         resolved_path = model_path
         for p in candidate_paths:
             if os.path.exists(p):
@@ -56,6 +64,21 @@ class YOLODetector:
         self._load_model()
 
     def _load_model(self) -> None:
+        if self.model_path.lower().endswith(".tflite"):
+            try:
+                self.tflite_model = TFLiteYOLODetector(
+                    self.model_path,
+                    confidence=self.confidence,
+                    iou=self.iou,
+                    target_classes=self.target_classes,
+                    num_threads=self.num_threads,
+                )
+                self.is_initialized = True
+                logger.info("[AI DETECTOR] TFLite model loaded for Raspberry Pi CPU inference.")
+            except Exception as e:
+                logger.error(f"[AI DETECTOR] Failed to load TFLite model: {e}")
+            return
+
         if not _ULTRALYTICS_AVAILABLE:
             logger.warning("[AI DETECTOR] Ultralytics not installed. Detector will run in fallback CV mode.")
             return
@@ -72,6 +95,12 @@ class YOLODetector:
 
     def detect(self, bgr_frame: np.ndarray) -> List[DetectionResult]:
         """Runs object detection on a BGR numpy frame."""
+        if self.tflite_model is not None:
+            try:
+                return self.tflite_model.detect(bgr_frame)
+            except Exception as e:
+                logger.error(f"[AI DETECTOR] TFLite inference error: {e}")
+                return []
         if not self.is_initialized or self.model is None or bgr_frame is None:
             return []
 

@@ -4,14 +4,12 @@ Provides true 360° proportional speed & steering control via RPi.GPIO PWM.
 
 Hardware Pin Allocations (BCM):
   IN1 → GPIO 17  (Physical Pin 11, Left Motor)
-  IN2 → GPIO 27  (Physical Pin 13, Left Motor)
-  IN2_ALT → GPIO 18 (Physical Pin 12, Left Motor Auto-Mirror fallback)
+  IN2 → GPIO 18  (Physical Pin 12, Left Motor)
   IN3 → GPIO 22  (Physical Pin 15, Right Motor)
   IN4 → GPIO 23  (Physical Pin 16, Right Motor)
 
 Features:
-  - Dual IN2 Drive: Drives BOTH GPIO 27 and GPIO 18 so left motor works
-    regardless of whether wired to Pin 13 (GPIO 27) or Pin 12 (GPIO 18).
+  - Optional legacy IN2 mirror, disabled in the default conflict-free profile.
   - Configurable / Invertible Polarity: left_polarity (+1/-1), right_polarity (+1/-1)
   - Persistent Settings: Saves polarity and trim calibrations to motor_settings.json
   - Independent wheel test routines: left_fwd, left_rev, right_fwd, right_rev
@@ -20,6 +18,7 @@ Features:
 import os
 import json
 import time
+import math
 import logging
 import threading
 from typing import Optional, Dict, Any, Tuple
@@ -49,22 +48,35 @@ class MotorController:
     def __init__(
         self,
         in1_pin: int = 17,
-        in2_pin: int = 27,
+        in2_pin: int = 18,
         in3_pin: int = 22,
         in4_pin: int = 23,
-        in2_alt_pin: int = 18,
+        in2_alt_pin: Optional[int] = None,
+        left_polarity: int = -1,
+        right_polarity: int = -1,
+        left_trim: float = 1.0,
+        right_trim: float = 1.0,
         auto_setup: bool = True,
+        dry_run: bool = False,
+        max_speed_limit: float = 0.70,
     ) -> None:
+        self.dry_run: bool = dry_run
+        self.max_speed_limit: float = max_speed_limit
+        self.last_duties: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
         self.in1 = in1_pin
         self.in2 = in2_pin
         self.in3 = in3_pin
         self.in4 = in4_pin
         self.in2_alt = in2_alt_pin
 
-        self.left_polarity: int = 1   # +1 or -1
-        self.right_polarity: int = 1  # +1 or -1
-        self.left_trim: float = 1.0   # 0.5 to 1.0
-        self.right_trim: float = 1.0  # 0.5 to 1.0
+        # A legacy mirrored pin is used only when explicitly configured.
+        # GPIO17 and GPIO18 are both active left-channel inputs in the
+        # physical-pin-11/12/15/16 wiring; neither is a legacy mirror.
+
+        self.left_polarity: int = left_polarity   # +1 or -1
+        self.right_polarity: int = right_polarity  # +1 or -1 (default -1 to match right motor mounting)
+        self.left_trim: float = left_trim         # 0.5 to 1.0
+        self.right_trim: float = right_trim       # 0.5 to 1.0
 
         self.is_initialized = False
         self._lock = threading.Lock()
@@ -87,10 +99,10 @@ class MotorController:
             try:
                 with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    self.left_polarity = int(data.get("left_polarity", 1))
-                    self.right_polarity = int(data.get("right_polarity", 1))
-                    self.left_trim = float(data.get("left_trim", 1.0))
-                    self.right_trim = float(data.get("right_trim", 1.0))
+                    self.left_polarity = int(data.get("left_polarity", self.left_polarity))
+                    self.right_polarity = int(data.get("right_polarity", self.right_polarity))
+                    self.left_trim = float(data.get("left_trim", self.left_trim))
+                    self.right_trim = float(data.get("right_trim", self.right_trim))
             except Exception as e:
                 logger.warning(f"Could not load motor settings: {e}")
 
@@ -113,6 +125,10 @@ class MotorController:
             logger.error(f"Could not save motor settings: {e}")
 
     def setup_gpio(self) -> bool:
+        if self.dry_run:
+            self.is_initialized = True
+            print("[DRY-RUN] Motor controller initialized in dry-run mode (no physical PWM).")
+            return True
         if not _GPIO_AVAILABLE:
             print("[SIMULATION] RPi.GPIO not available.")
             return False
@@ -138,7 +154,7 @@ class MotorController:
             self._pwm_in3.start(0)
             self._pwm_in4.start(0)
 
-            if self.in2_alt:
+            if self.in2_alt and self.in2_alt != self.in2:
                 try:
                     self._pwm_in2_alt = GPIO.PWM(self.in2_alt, self.PWM_FREQ)
                     self._pwm_in2_alt.start(0)
@@ -162,12 +178,17 @@ class MotorController:
 
     def _set_duties(self, d1: float, d2: float, d3: float, d4: float) -> None:
         """Set duty cycles (0.0 to 100.0) for each motor pin."""
-        if not self.is_initialized or not _GPIO_AVAILABLE:
-            return
         d1 = max(0.0, min(100.0, d1))
         d2 = max(0.0, min(100.0, d2))
         d3 = max(0.0, min(100.0, d3))
         d4 = max(0.0, min(100.0, d4))
+        self.last_duties = (d1, d2, d3, d4)
+
+        if getattr(self, "dry_run", False):
+            return
+
+        if not self.is_initialized or not _GPIO_AVAILABLE:
+            return
 
         with self._lock:
             if self._pwm_in1: self._pwm_in1.ChangeDutyCycle(d1)
@@ -210,18 +231,18 @@ class MotorController:
         self._set_duties(d1, d2, d3, d4)
         self._reset_watchdog()
 
-    def left(self, speed: float = 80.0) -> None:
+    def left(self, speed: float = 90.0) -> None:
         spd = max(0.0, min(100.0, speed))
-        print(f">>> MOTOR: LEFT {spd:.0f}%")
+        print(f">>> MOTOR: LEFT (A) {spd:.0f}%")
         # Turn left: Left side reverse (-spd), Right side forward (+spd)
         d1, d2 = self._get_left_duties(-spd)
         d3, d4 = self._get_right_duties(spd)
         self._set_duties(d1, d2, d3, d4)
         self._reset_watchdog()
 
-    def right(self, speed: float = 80.0) -> None:
+    def right(self, speed: float = 90.0) -> None:
         spd = max(0.0, min(100.0, speed))
-        print(f">>> MOTOR: RIGHT {spd:.0f}%")
+        print(f">>> MOTOR: RIGHT (D) {spd:.0f}%")
         # Turn right: Left side forward (+spd), Right side reverse (-spd)
         d1, d2 = self._get_left_duties(spd)
         d3, d4 = self._get_right_duties(-spd)
@@ -237,10 +258,15 @@ class MotorController:
     def drive(self, throttle: float, steering: float) -> str:
         """
         True 360° proportional tank-mix drive.
-        throttle: -1.0 (full reverse) to +1.0 (full forward)
-        steering: -1.0 (full left) to +1.0 (full right)
+        throttle: -1.0 (full reverse / S) to +1.0 (full forward / W)
+        steering: -1.0 (full left / A) to +1.0 (full right / D)
         """
-        throttle = max(-1.0, min(1.0, throttle))
+        if math.isnan(throttle) or math.isnan(steering) or math.isinf(throttle) or math.isinf(steering):
+            self.stop()
+            return "STOPPED_INVALID_INPUT"
+
+        max_spd = getattr(self, "max_speed_limit", 0.70)
+        throttle = max(-max_spd, min(max_spd, throttle))
         steering = max(-1.0, min(1.0, steering))
 
         # Deadzone check
@@ -249,8 +275,8 @@ class MotorController:
             return "STOPPED"
 
         # Differential Steering:
-        # Steering LEFT (-x): Right motor speeds up forward, Left motor slows down/reverses -> Turns LEFT
-        # Steering RIGHT (+x): Left motor speeds up forward, Right motor slows down/reverses -> Turns RIGHT
+        # Steering LEFT (-x / A): Right motor forward, Left motor reverse -> Turns LEFT
+        # Steering RIGHT (+x / D): Left motor forward, Right motor reverse -> Turns RIGHT
         left_speed = throttle + steering
         right_speed = throttle - steering
 
@@ -263,7 +289,11 @@ class MotorController:
         self._set_duties(d1, d2, d3, d4)
         self._reset_watchdog()
 
-        if abs(throttle) >= abs(steering):
+        if abs(throttle) > 0.15 and abs(steering) > 0.15:
+            fwd_rev = "FWD" if throttle > 0 else "REV"
+            left_right = "LEFT" if steering < 0 else "RIGHT"
+            return f"{fwd_rev}-{left_right}"
+        elif abs(throttle) >= abs(steering):
             return "FORWARD" if throttle > 0 else "REVERSE"
         else:
             return "TURN-LEFT" if steering < 0 else "TURN-RIGHT"
@@ -301,25 +331,58 @@ class MotorController:
             "in2_alt_pin": self.in2_alt,
         }
 
+    def get_diagnostic(self, action: str, speed: float = 90.0) -> Dict[str, Any]:
+        """Return the GPIO duty pattern for one isolated driver direction."""
+        action = action.lower().strip()
+        speed = max(0.0, min(100.0, float(speed)))
+        if action == "left_fwd":
+            left = self._get_left_duties(speed)
+            right = (0.0, 0.0)
+            label = "Left side forward"
+        elif action == "left_rev":
+            left = self._get_left_duties(-speed)
+            right = (0.0, 0.0)
+            label = "Left side reverse"
+        elif action == "right_fwd":
+            left = (0.0, 0.0)
+            right = self._get_right_duties(speed)
+            label = "Right side forward"
+        elif action == "right_rev":
+            left = (0.0, 0.0)
+            right = self._get_right_duties(-speed)
+            label = "Right side reverse"
+        else:
+            raise ValueError("Unknown diagnostic action")
+
+        return {
+            "action": action,
+            "label": label,
+            "speed": speed,
+            "pins": {
+                str(self.in1): left[0],
+                str(self.in2): left[1],
+                str(self.in3): right[0],
+                str(self.in4): right[1],
+            },
+            "left_duties": list(left),
+            "right_duties": list(right),
+        }
+
     def test_pulse(self, action: str, duration: float = 1.2, speed: float = 90.0) -> None:
         """Run a test motion pulse for diagnosing individual wheel direction."""
-        action = action.lower()
-        if action == "left_fwd":
-            d1, d2 = self._get_left_duties(speed)
-            self._set_duties(d1, d2, 0.0, 0.0)
-        elif action == "left_rev":
-            d1, d2 = self._get_left_duties(-speed)
-            self._set_duties(d1, d2, 0.0, 0.0)
-        elif action == "right_fwd":
-            d3, d4 = self._get_right_duties(speed)
-            self._set_duties(0.0, 0.0, d3, d4)
-        elif action == "right_rev":
-            d3, d4 = self._get_right_duties(-speed)
-            self._set_duties(0.0, 0.0, d3, d4)
+        action = action.lower().strip()
+        duration = max(0.1, min(1.5, float(duration)))
+        if action in ("left_fwd", "left_rev", "right_fwd", "right_rev"):
+            diagnostic = self.get_diagnostic(action, speed)
+            left = diagnostic["left_duties"]
+            right = diagnostic["right_duties"]
+            self._set_duties(left[0], left[1], right[0], right[1])
         elif action == "both_fwd":
             self.forward(speed)
         elif action == "both_rev":
             self.backward(speed)
+        else:
+            raise ValueError("Unknown test action")
 
         def _auto_stop():
             time.sleep(duration)

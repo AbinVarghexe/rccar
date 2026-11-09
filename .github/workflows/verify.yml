@@ -1,0 +1,35 @@
+name: CI Verification
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f autonomous_car/requirements.txt ]; then pip install -r autonomous_car/requirements.txt || true; fi
+          pip install pytest flake8
+
+      - name: Syntax & Compilation Check
+        run: |
+          python -m compileall autonomous_car/
+
+      - name: Lint with flake8
+        run: |
+          # Stop build if there are Python syntax errors or undefined names
+          flake8 autonomous_car --count --select=E9,F63,F7,F82 --show-source --statistics

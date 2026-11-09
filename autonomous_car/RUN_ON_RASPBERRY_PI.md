@@ -40,3 +40,32 @@ Open your web browser on your phone, laptop, or PC connected to the same Wi-Fi a
 http://<RASPBERRY_PI_IP>:5000
 ```
 *(The IP address will be displayed in your terminal when `setup.sh` finishes)*
+
+## Offline Region Navigation with ArUco Markers
+
+The marker route controller is disabled by default. Print ArUco markers from
+the `DICT_4X4_50` dictionary, place one at each region, and configure a route
+through the dashboard API. For example, to drive from marker 10 to marker 20:
+
+```bash
+curl -X POST http://<RASPBERRY_PI_IP>:5000/api/marker/route \
+  -H 'Content-Type: application/json' \
+  -d '{"marker_ids":[10,20],"enabled":true}'
+```
+
+The car keeps the pan camera centered while driving, follows the active marker,
+stops when that marker is reached, and advances to the next marker. If the
+active marker is lost, the car holds `STOP`. HC-SR04 distance safety is checked
+before marker steering and can still stop or reverse the car.
+
+Check the route state with:
+
+```bash
+curl http://<RASPBERRY_PI_IP>:5000/api/marker/status
+```
+
+Clear the route and return to manual control with:
+
+```bash
+curl -X DELETE http://<RASPBERRY_PI_IP>:5000/api/marker/route
+```

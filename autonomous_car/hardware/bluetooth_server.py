@@ -137,8 +137,12 @@ class BluetoothServer:
                 self._server_sock = socket.socket(
                     socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM
                 )
-                self._server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self._server_sock.bind(("", self.channel))
+                # In Linux BlueZ AF_BLUETOOTH RFCOMM, BDADDR_ANY is '00:00:00:00:00:00'
+                bind_addr = "00:00:00:00:00:00"
+                try:
+                    self._server_sock.bind((bind_addr, self.channel))
+                except Exception:
+                    self._server_sock.bind(("", self.channel))
                 self._server_sock.listen(1)
                 self._server_sock.settimeout(2.0)
 
@@ -227,7 +231,23 @@ class BluetoothServer:
                 if self.motors: self.motors.right()
                 self._send_reply(client_sock, "ACK:RIGHT\r\n")
 
-            elif cmd in ("STOP", "X", "STP", " "):
+            elif cmd in ("WA", "FA", "W+A", "FWD_LEFT"):
+                if self.motors: self.motors.drive(throttle=1.0, steering=-0.8)
+                self._send_reply(client_sock, "ACK:FWD_LEFT\r\n")
+
+            elif cmd in ("WD", "FD", "W+D", "FWD_RIGHT"):
+                if self.motors: self.motors.drive(throttle=1.0, steering=0.8)
+                self._send_reply(client_sock, "ACK:FWD_RIGHT\r\n")
+
+            elif cmd in ("SA", "BA", "S+A", "REV_LEFT"):
+                if self.motors: self.motors.drive(throttle=-1.0, steering=-0.8)
+                self._send_reply(client_sock, "ACK:REV_LEFT\r\n")
+
+            elif cmd in ("SD", "BD", "S+D", "REV_RIGHT"):
+                if self.motors: self.motors.drive(throttle=-1.0, steering=0.8)
+                self._send_reply(client_sock, "ACK:REV_RIGHT\r\n")
+
+            elif cmd in ("STOP", "X", "STP", " ", ""):
                 if self.motors: self.motors.stop()
                 self._send_reply(client_sock, "ACK:STOP\r\n")
 

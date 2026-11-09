@@ -28,6 +28,7 @@ wheels/
 autonomous_car.log
 car.log
 media/
+data/
 tmp/
 .cache/
 *.jpg
@@ -35,8 +36,27 @@ tmp/
 *.png
 *.mp4
 *.pt
+*.h5
 motor_settings.json
+
+# Whitelist documentation assets
+!docs/**
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.png
+!report/**
+!report/**/*.jpg
+!report/**/*.jpeg
+!report/**/*.png
+!autonomous_car/docs/**
+!autonomous_car/docs/**/*.jpg
+!autonomous_car/docs/**/*.jpeg
+!autonomous_car/docs/**/*.png
 
 # OS specific
 .DS_Store
 Thumbs.db
+
+*.bak
+graphify-out/
+.kiro/

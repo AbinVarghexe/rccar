@@ -1,0 +1,17 @@
+\newpage
+\thispagestyle{fancy}
+\markboth{ABSTRACT}{ABSTRACT}
+\begin{center}
+\vspace*{0.2cm}
+{\Large\textbf{ABSTRACT}}
+\end{center}
+\vspace{0.8cm}
+
+\noindent
+\begin{spacing}{1.5}
+Autonomous micro-vehicles and intelligent ground robotics require robust, real-time perception and deterministic motion arbitration to navigate dynamic environments safely. Traditional robotic control systems frequently decouple high-level computer vision algorithms from low-level motor actuation, introducing severe latency bottlenecks and uncalibrated safety failures when deployed on resource-constrained embedded platforms. This project proposes an integrated, embedded Edge-AI autonomous navigation and real-time collision avoidance system implemented on a Raspberry Pi single-board computer driving an intelligent robotic testbed.
+
+The system combines a low-latency vision pipeline using a native camera module running at 30 frames per second, adaptive Region of Interest (ROI) filtering, and centroid lane-tracking with an INT8-quantized YOLOv8 neural network executed through the LiteRT inference engine. To resolve complex indoor obstructions where semantic object detection alone is insufficient, a multi-sector corridor density scanner evaluates prospective clearance pathways in real time. Sensor fusion is established by coupling the optical perception stack with front and rear ultrasonic distance sensors through a calibrated voltage-divider interface. Motion execution is governed by a deterministic Finite State Machine (FSM) driving a dual H-bridge motor controller using 100~Hz software Pulse Width Modulation (PWM) with differential tank-mix steering, while an analog camera pan servo is stabilized via dedicated hardware PWM on GPIO pin 12.
+
+Furthermore, an independent safety arbiter enforces strict motion authority gates and a 0.6-second watchdog timer, ensuring instantaneous emergency braking upon obstacle detection or communications failure. A web-based teleoperation and telemetry dashboard implemented with Flask provides bidirectional remote control and real-time Heads-Up Display (HUD) visualization over local Wi-Fi and Bluetooth RFCOMM. Experimental evaluation demonstrates steady inference latencies of 106.4~ms, reliable trajectory tracking, and zero-collision obstacle avoidance, establishing a lightweight, scalable architectural foundation for embedded intelligent vehicular systems.
+\end{spacing}

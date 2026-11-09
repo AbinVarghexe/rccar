@@ -11,6 +11,7 @@ class ActionEnum(str, Enum):
     SLOW = "SLOW"
     WAIT = "WAIT"
     SCAN = "SCAN"
+    REVERSE = "REVERSE"
     UNKNOWN = "UNKNOWN"
 
 @dataclass

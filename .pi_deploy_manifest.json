@@ -1,0 +1,1337 @@
+{
+  "files": {
+    "config.py": {
+      "md5": "1347e337fa5c3273481f7e55a4ee15fe",
+      "size_bytes": 10143,
+      "deployed_at": "2026-10-29T02:01:30.742280",
+      "remote_path": "/home/alfin/autonomous_car/config.py"
+    },
+    "main.py": {
+      "md5": "8c3284e2ff1545fcae83ddd319d2fd31",
+      "size_bytes": 3645,
+      "deployed_at": "2026-10-26T21:08:51.957349",
+      "remote_path": "/home/alfin/autonomous_car/main.py"
+    },
+    "README.md": {
+      "md5": "2a770bc8ceda0cf84d39fffbd6464271",
+      "size_bytes": 23475,
+      "deployed_at": "2026-10-29T01:20:46.953246",
+      "remote_path": "/home/alfin/autonomous_car/README.md"
+    },
+    "requirements.txt": {
+      "md5": "c1d6b4a2739cc9efeca808fb6dc17cb3",
+      "size_bytes": 438,
+      "deployed_at": "2026-10-26T20:58:21.345707",
+      "remote_path": "/home/alfin/autonomous_car/requirements.txt"
+    },
+    "run.sh": {
+      "md5": "82af05724474d07fa9ac2f60aea3789b",
+      "size_bytes": 110,
+      "deployed_at": "2026-10-13T20:58:05.208316",
+      "remote_path": "/home/alfin/autonomous_car/run.sh"
+    },
+    "RUN_ON_RASPBERRY_PI.md": {
+      "md5": "f2652056270fd0723275e343b66f72bc",
+      "size_bytes": 1899,
+      "deployed_at": "2026-10-26T11:56:37.395579",
+      "remote_path": "/home/alfin/autonomous_car/RUN_ON_RASPBERRY_PI.md"
+    },
+    "setup.sh": {
+      "md5": "7e006344339fc0c3b370e60f257d507d",
+      "size_bytes": 2406,
+      "deployed_at": "2026-10-13T20:58:07.149922",
+      "remote_path": "/home/alfin/autonomous_car/setup.sh"
+    },
+    "__init__.py": {
+      "md5": "5d79ae8ec1119e7be36829bf722944be",
+      "size_bytes": 58,
+      "deployed_at": "2026-10-13T20:58:08.138856",
+      "remote_path": "/home/alfin/autonomous_car/__init__.py"
+    },
+    "ai/classes.py": {
+      "md5": "a9174821e2453bab7a5508739d369e17",
+      "size_bytes": 1542,
+      "deployed_at": "2026-10-21T22:45:38.396596",
+      "remote_path": "/home/alfin/autonomous_car/ai/classes.py"
+    },
+    "ai/corridor_scanner.py": {
+      "md5": "9f34e5b4b90fd0844a23bcf1e78be465",
+      "size_bytes": 9668,
+      "deployed_at": "2026-10-22T22:48:00.126228",
+      "remote_path": "/home/alfin/autonomous_car/ai/corridor_scanner.py"
+    },
+    "ai/detector.py": {
+      "md5": "bb18d91b56cb569d0b9ef4100a6dddf9",
+      "size_bytes": 5246,
+      "deployed_at": "2026-10-18T22:06:16.662019",
+      "remote_path": "/home/alfin/autonomous_car/ai/detector.py"
+    },
+    "ai/risk_analyzer.py": {
+      "md5": "bfb3fba755731f0aa9362b70ec628301",
+      "size_bytes": 4582,
+      "deployed_at": "2026-10-18T22:06:39.708443",
+      "remote_path": "/home/alfin/autonomous_car/ai/risk_analyzer.py"
+    },
+    "ai/server_client.py": {
+      "md5": "5e8d8eee171b9ac299ec30165dbd898f",
+      "size_bytes": 4250,
+      "deployed_at": "2026-10-21T23:12:19.187187",
+      "remote_path": "/home/alfin/autonomous_car/ai/server_client.py"
+    },
+    "ai/tracker.py": {
+      "md5": "4d0980953bf69984fc82c375e0f26d32",
+      "size_bytes": 5503,
+      "deployed_at": "2026-10-29T01:20:47.032969",
+      "remote_path": "/home/alfin/autonomous_car/ai/tracker.py"
+    },
+    "ai/visualization.py": {
+      "md5": "bebf273b949922a754005f42b787badb",
+      "size_bytes": 11120,
+      "deployed_at": "2026-10-21T22:45:38.464417",
+      "remote_path": "/home/alfin/autonomous_car/ai/visualization.py"
+    },
+    "ai/__init__.py": {
+      "md5": "5968a2ae7d419274a11771d34b940949",
+      "size_bytes": 871,
+      "deployed_at": "2026-10-23T01:50:12.076115",
+      "remote_path": "/home/alfin/autonomous_car/ai/__init__.py"
+    },
+    "control/controller.py": {
+      "md5": "1a7837631709b340093a0197f9c7c562",
+      "size_bytes": 6207,
+      "deployed_at": "2026-10-18T23:09:57.647045",
+      "remote_path": "/home/alfin/autonomous_car/control/controller.py"
+    },
+    "control/pid.py": {
+      "md5": "aa87f2325d604457b20457989c22ee88",
+      "size_bytes": 2028,
+      "deployed_at": "2026-10-18T23:09:57.579687",
+      "remote_path": "/home/alfin/autonomous_car/control/pid.py"
+    },
+    "control/serial_comm.py": {
+      "md5": "1187110947189864960247cde4cf0c2c",
+      "size_bytes": 7221,
+      "deployed_at": "2026-10-28T18:30:30.616894",
+      "remote_path": "/home/alfin/autonomous_car/control/serial_comm.py"
+    },
+    "control/__init__.py": {
+      "md5": "1339fb778aa8c77bc7cd5b1aaf7f3855",
+      "size_bytes": 110,
+      "deployed_at": "2026-10-18T23:09:49.171931",
+      "remote_path": "/home/alfin/autonomous_car/control/__init__.py"
+    },
+    "dashboard/app.py": {
+      "md5": "1f4eb86d87b787640892e9c3c5290df5",
+      "size_bytes": 116906,
+      "deployed_at": "2026-10-26T21:16:30.343607",
+      "remote_path": "/home/alfin/autonomous_car/dashboard/app.py"
+    },
+    "dashboard/template.html": {
+      "md5": "3261eb3d7faad76f749c49f3bd74e885",
+      "size_bytes": 152373,
+      "deployed_at": "2026-10-29T01:49:23.470217",
+      "remote_path": "/home/alfin/autonomous_car/dashboard/template.html"
+    },
+    "dashboard/__init__.py": {
+      "md5": "1c4ada9e67858df2cdf5571d6c3b0c98",
+      "size_bytes": 72,
+      "deployed_at": "2026-10-13T20:58:19.772236",
+      "remote_path": "/home/alfin/autonomous_car/dashboard/__init__.py"
+    },
+    "hardware/bluetooth_server.py": {
+      "md5": "4e2d8f71770425d6fb745af206c074f2",
+      "size_bytes": 11004,
+      "deployed_at": "2026-10-29T01:20:47.117325",
+      "remote_path": "/home/alfin/autonomous_car/hardware/bluetooth_server.py"
+    },
+    "hardware/motors.py": {
+      "md5": "5c66c83a1189f6416534b6893f989adb",
+      "size_bytes": 15816,
+      "deployed_at": "2026-10-26T20:42:56.580122",
+      "remote_path": "/home/alfin/autonomous_car/hardware/motors.py"
+    },
+    "hardware/servo.py": {
+      "md5": "1aecfe557e8c7147790673ee5e432190",
+      "size_bytes": 11227,
+      "deployed_at": "2026-10-29T01:20:47.139369",
+      "remote_path": "/home/alfin/autonomous_car/hardware/servo.py"
+    },
+    "hardware/__init__.py": {
+      "md5": "48b5a88a0f3ca64e1825ed60e310d6fe",
+      "size_bytes": 75,
+      "deployed_at": "2026-10-18T23:09:49.113894",
+      "remote_path": "/home/alfin/autonomous_car/hardware/__init__.py"
+    },
+    "navigation/autonomous_driver.py": {
+      "md5": "0c71f2cdb4115fe578036e95518132f8",
+      "size_bytes": 116597,
+      "deployed_at": "2026-10-26T19:53:10.763319",
+      "remote_path": "/home/alfin/autonomous_car/navigation/autonomous_driver.py"
+    },
+    "navigation/planner.py": {
+      "md5": "a197c7c09686fadc54ae612f5557bcad",
+      "size_bytes": 8827,
+      "deployed_at": "2026-10-13T20:58:23.619958",
+      "remote_path": "/home/alfin/autonomous_car/navigation/planner.py"
+    },
+    "navigation/state_machine.py": {
+      "md5": "99b0a843f391a09fa7fc4d9b32c054aa",
+      "size_bytes": 2508,
+      "deployed_at": "2026-10-13T20:58:23.688073",
+      "remote_path": "/home/alfin/autonomous_car/navigation/state_machine.py"
+    },
+    "navigation/waypoint.py": {
+      "md5": "c0695116301346380f70a671394762fd",
+      "size_bytes": 11223,
+      "deployed_at": "2026-10-26T11:39:31.170059",
+      "remote_path": "/home/alfin/autonomous_car/navigation/waypoint.py"
+    },
+    "navigation/__init__.py": {
+      "md5": "eef3fe2eb8931288c7e13ed75123c2e3",
+      "size_bytes": 63,
+      "deployed_at": "2026-10-13T20:58:23.804911",
+      "remote_path": "/home/alfin/autonomous_car/navigation/__init__.py"
+    },
+    "scripts/install_autostart.sh": {
+      "md5": "783b68a920e32b8314bf8a5d5d24904a",
+      "size_bytes": 999,
+      "deployed_at": "2026-10-13T20:58:23.912244",
+      "remote_path": "/home/alfin/autonomous_car/scripts/install_autostart.sh"
+    },
+    "scripts/push_to_pi.py": {
+      "md5": "6f8a65a6868d6f4d01eb03aea4cb80a4",
+      "size_bytes": 12090,
+      "deployed_at": "2026-10-21T21:20:54.194260",
+      "remote_path": "/home/alfin/autonomous_car/scripts/push_to_pi.py"
+    },
+    "scripts/rccar.service": {
+      "md5": "a8282847fbcbb5c0001cd03c76263a49",
+      "size_bytes": 413,
+      "deployed_at": "2026-10-27T02:45:38.048139",
+      "remote_path": "/home/alfin/autonomous_car/scripts/rccar.service"
+    },
+    "scripts/remote_exec.py": {
+      "md5": "25a816ae1186087394c05308817171b8",
+      "size_bytes": 786,
+      "deployed_at": "2026-10-21T21:20:54.242816",
+      "remote_path": "/home/alfin/autonomous_car/scripts/remote_exec.py"
+    },
+    "scripts/scan_network.py": {
+      "md5": "09b3ca7739d140699dc59b78c6c21091",
+      "size_bytes": 1160,
+      "deployed_at": "2026-10-19T14:30:26.629205",
+      "remote_path": "/home/alfin/autonomous_car/scripts/scan_network.py"
+    },
+    "scripts/setup_wifi_hotspot.sh": {
+      "md5": "8f4920b91a480ec148facd1c4fd8c758",
+      "size_bytes": 2856,
+      "deployed_at": "2026-10-13T20:58:25.099405",
+      "remote_path": "/home/alfin/autonomous_car/scripts/setup_wifi_hotspot.sh"
+    },
+    "scripts/test_bt_bind.py": {
+      "md5": "b678cdde63bfc04e04b722f8d883dcb8",
+      "size_bytes": 477,
+      "deployed_at": "2026-10-13T20:58:25.242811",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_bt_bind.py"
+    },
+    "scripts/test_motor_pins.py": {
+      "md5": "036256d3e8c8d1a37ddb7c43ce5f89f0",
+      "size_bytes": 2213,
+      "deployed_at": "2026-10-13T20:58:25.347328",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_motor_pins.py"
+    },
+    "scripts/update_pi.sh": {
+      "md5": "bed50281d574e61728030c5fcd47e05e",
+      "size_bytes": 5021,
+      "deployed_at": "2026-10-13T20:58:25.528181",
+      "remote_path": "/home/alfin/autonomous_car/scripts/update_pi.sh"
+    },
+    "sensors/ultrasonic.py": {
+      "md5": "47067af58c4a00eabc2debe244b403b7",
+      "size_bytes": 12053,
+      "deployed_at": "2026-10-22T21:19:25.166089",
+      "remote_path": "/home/alfin/autonomous_car/sensors/ultrasonic.py"
+    },
+    "sensors/__init__.py": {
+      "md5": "7e3c7982a80fdb8e8e4e6b66f82eb1c8",
+      "size_bytes": 69,
+      "deployed_at": "2026-10-13T20:58:25.778399",
+      "remote_path": "/home/alfin/autonomous_car/sensors/__init__.py"
+    },
+    "tests/test_autonomous_driver.py": {
+      "md5": "32b1b60741846ae127b404f7983b7bf5",
+      "size_bytes": 12025,
+      "deployed_at": "2026-10-22T22:48:01.273279",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_autonomous_driver.py"
+    },
+    "tests/test_camera_api.py": {
+      "md5": "dc5ea8e55ae1dd9ea464f11b05f8f939",
+      "size_bytes": 4798,
+      "deployed_at": "2026-10-13T20:58:26.057191",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_camera_api.py"
+    },
+    "tests/test_cam_footage.py": {
+      "md5": "18869e499c8abc7db714cab4c956762b",
+      "size_bytes": 5329,
+      "deployed_at": "2026-10-13T20:58:26.139243",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_cam_footage.py"
+    },
+    "tests/test_control.py": {
+      "md5": "bf4e41138d09d129f611c95d2b07691a",
+      "size_bytes": 2492,
+      "deployed_at": "2026-10-13T20:58:26.209058",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_control.py"
+    },
+    "tests/test_dashboard_alignment.py": {
+      "md5": "04c639886ca5441701fa0c6efb98fe5c",
+      "size_bytes": 3522,
+      "deployed_at": "2026-10-13T20:58:26.282874",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_dashboard_alignment.py"
+    },
+    "tests/test_live_preview.py": {
+      "md5": "8c49b4b61d80b18c23c2abde64f2ea25",
+      "size_bytes": 1496,
+      "deployed_at": "2026-10-13T20:58:26.360316",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_live_preview.py"
+    },
+    "tests/test_motors_standalone.py": {
+      "md5": "bf283861ab5c00abb17b935768d326b2",
+      "size_bytes": 2817,
+      "deployed_at": "2026-10-14T15:32:26.816599",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_motors_standalone.py"
+    },
+    "tests/test_navigation.py": {
+      "md5": "d78bd4a02257351c5e5f77ec017a5000",
+      "size_bytes": 3901,
+      "deployed_at": "2026-10-13T20:58:26.643923",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_navigation.py"
+    },
+    "tests/test_sensors.py": {
+      "md5": "7381ee96d8770786200420932dd4a65c",
+      "size_bytes": 1568,
+      "deployed_at": "2026-10-22T21:24:51.545611",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_sensors.py"
+    },
+    "tests/test_vision.py": {
+      "md5": "e8b38b9e7baed97ea4fdb16de9c19022",
+      "size_bytes": 3007,
+      "deployed_at": "2026-10-22T21:19:25.526370",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_vision.py"
+    },
+    "tests/__init__.py": {
+      "md5": "f34ccb1a11669f51d82676d8e03816c4",
+      "size_bytes": 50,
+      "deployed_at": "2026-10-13T20:58:26.984186",
+      "remote_path": "/home/alfin/autonomous_car/tests/__init__.py"
+    },
+    "utils/fps.py": {
+      "md5": "f13e5d5fd15a1dd6d39c71e523924daa",
+      "size_bytes": 1514,
+      "deployed_at": "2026-10-13T20:58:27.098321",
+      "remote_path": "/home/alfin/autonomous_car/utils/fps.py"
+    },
+    "utils/logger.py": {
+      "md5": "099723a601185f74a18fb00daee7e07a",
+      "size_bytes": 1231,
+      "deployed_at": "2026-10-13T20:58:27.265991",
+      "remote_path": "/home/alfin/autonomous_car/utils/logger.py"
+    },
+    "utils/__init__.py": {
+      "md5": "043dbda8c4923c64493267be07607256",
+      "size_bytes": 57,
+      "deployed_at": "2026-10-13T20:58:27.427129",
+      "remote_path": "/home/alfin/autonomous_car/utils/__init__.py"
+    },
+    "vision/camera.py": {
+      "md5": "883123d8ab79c2d90d1be01f63747263",
+      "size_bytes": 24542,
+      "deployed_at": "2026-10-29T01:38:57.120659",
+      "remote_path": "/home/alfin/autonomous_car/vision/camera.py"
+    },
+    "vision/junction_detector.py": {
+      "md5": "be653e0db4682a45eb428b00f17d35f7",
+      "size_bytes": 3757,
+      "deployed_at": "2026-10-13T20:58:27.713621",
+      "remote_path": "/home/alfin/autonomous_car/vision/junction_detector.py"
+    },
+    "vision/lane_detector.py": {
+      "md5": "500881d30bb5f68cb67110c1d7a3b2a3",
+      "size_bytes": 16960,
+      "deployed_at": "2026-10-29T03:04:28.746416",
+      "remote_path": "/home/alfin/autonomous_car/vision/lane_detector.py"
+    },
+    "vision/object_detector.py": {
+      "md5": "7d346800e08ac46406ece03a76d5db35",
+      "size_bytes": 5505,
+      "deployed_at": "2026-10-13T20:58:27.939701",
+      "remote_path": "/home/alfin/autonomous_car/vision/object_detector.py"
+    },
+    "vision/preprocessing.py": {
+      "md5": "29f3e65ac21bbf8e0121f15bac61029d",
+      "size_bytes": 2678,
+      "deployed_at": "2026-10-13T20:58:28.120130",
+      "remote_path": "/home/alfin/autonomous_car/vision/preprocessing.py"
+    },
+    "vision/stream_receiver.py": {
+      "md5": "f2e75ad387e77bf3816e68bbb59096a4",
+      "size_bytes": 2852,
+      "deployed_at": "2026-10-13T20:58:28.254155",
+      "remote_path": "/home/alfin/autonomous_car/vision/stream_receiver.py"
+    },
+    "vision/__init__.py": {
+      "md5": "946fb3147fc929d6473b0b1a82672f40",
+      "size_bytes": 124,
+      "deployed_at": "2026-10-13T20:58:28.516734",
+      "remote_path": "/home/alfin/autonomous_car/vision/__init__.py"
+    },
+    "motor_settings.json": {
+      "md5": "9a899ba870857294c854fc4616ed11c0",
+      "size_bytes": 182,
+      "deployed_at": "2026-10-26T20:42:56.591702",
+      "remote_path": "/home/alfin/autonomous_car/motor_settings.json"
+    },
+    "tests/test_motor_diagnostics.py": {
+      "md5": "11e0409bbd22ecc904249f4dff0340c0",
+      "size_bytes": 970,
+      "deployed_at": "2026-10-14T15:06:22.977854",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_motor_diagnostics.py"
+    },
+    "tests/test_wasd_motion.py": {
+      "md5": "b851a57fc4602c912cedf4eb39753ec1",
+      "size_bytes": 1856,
+      "deployed_at": "2026-10-14T15:06:23.073160",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_wasd_motion.py"
+    },
+    "autonomous_car.log": {
+      "md5": "86c156a031bf1cbee8530d872f8ec9a4",
+      "size_bytes": 220,
+      "deployed_at": "2026-10-28T09:03:03.992022",
+      "remote_path": "/home/alfin/autonomous_car/autonomous_car.log"
+    },
+    "tools/test_left_channel.py": {
+      "md5": "d733ca3b4175fc560468492c158a3b96",
+      "size_bytes": 1970,
+      "deployed_at": "2026-10-14T15:32:27.041190",
+      "remote_path": "/home/alfin/autonomous_car/tools/test_left_channel.py"
+    },
+    "ai/tflite_detector.py": {
+      "md5": "07e57b801222e9cfee6e880af00e1086",
+      "size_bytes": 11285,
+      "deployed_at": "2026-10-26T11:14:13.456417",
+      "remote_path": "/home/alfin/autonomous_car/ai/tflite_detector.py"
+    },
+    "models/yolov8n_int8.tflite": {
+      "md5": "5635667ec8102deb53187fa896d5e8a4",
+      "size_bytes": 3250568,
+      "deployed_at": "2026-10-18T22:05:13.229230",
+      "remote_path": "/home/alfin/autonomous_car/models/yolov8n_int8.tflite"
+    },
+    "ai/paid_decision_client.py": {
+      "md5": "06618464bb2b8dbb7b76e0fdee3590c9",
+      "size_bytes": 5776,
+      "deployed_at": "2026-10-18T22:06:39.789428",
+      "remote_path": "/home/alfin/autonomous_car/ai/paid_decision_client.py"
+    },
+    "tests/test_tflite_detector.py": {
+      "md5": "bdfd0ae662d8775fc58266e45ae880f3",
+      "size_bytes": 1797,
+      "deployed_at": "2026-10-14T17:13:43.120141",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_tflite_detector.py"
+    },
+    "backup/README.md": {
+      "md5": "6389337c13817433a8849076ef3c5803",
+      "size_bytes": 231,
+      "deployed_at": "2026-10-18T22:04:55.854649",
+      "remote_path": "/home/alfin/autonomous_car/backup/README.md"
+    },
+    "backup/obstacle_lane_stack/config.py": {
+      "md5": "ed4c468efc7871b7e4760128b93bf6e9",
+      "size_bytes": 6087,
+      "deployed_at": "2026-10-18T22:04:55.899686",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/config.py"
+    },
+    "backup/obstacle_lane_stack/main.py": {
+      "md5": "e9e266116a5c92ed98ab0f5551108731",
+      "size_bytes": 3091,
+      "deployed_at": "2026-10-18T22:04:55.915620",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/main.py"
+    },
+    "backup/obstacle_lane_stack/ai/classes.py": {
+      "md5": "78d582930cbd070160c96f1d3e968812",
+      "size_bytes": 1518,
+      "deployed_at": "2026-10-18T22:04:55.967839",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/classes.py"
+    },
+    "backup/obstacle_lane_stack/ai/corridor_scanner.py": {
+      "md5": "98cef7d9dbba2e56ffdd1d098ad4b840",
+      "size_bytes": 5053,
+      "deployed_at": "2026-10-18T22:04:55.989059",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/corridor_scanner.py"
+    },
+    "backup/obstacle_lane_stack/ai/detector.py": {
+      "md5": "0a2c73ef41455374c5dfa68ec3c12b0d",
+      "size_bytes": 5086,
+      "deployed_at": "2026-10-18T22:04:56.004481",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/detector.py"
+    },
+    "backup/obstacle_lane_stack/ai/paid_decision_client.py": {
+      "md5": "06618464bb2b8dbb7b76e0fdee3590c9",
+      "size_bytes": 5776,
+      "deployed_at": "2026-10-18T22:04:56.058772",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/paid_decision_client.py"
+    },
+    "backup/obstacle_lane_stack/ai/risk_analyzer.py": {
+      "md5": "bfb3fba755731f0aa9362b70ec628301",
+      "size_bytes": 4582,
+      "deployed_at": "2026-10-18T22:04:56.071144",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/risk_analyzer.py"
+    },
+    "backup/obstacle_lane_stack/ai/server_client.py": {
+      "md5": "ddec0020b4b87b5062fbb12c8491d7f1",
+      "size_bytes": 4380,
+      "deployed_at": "2026-10-18T22:04:56.113182",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/server_client.py"
+    },
+    "backup/obstacle_lane_stack/ai/tflite_detector.py": {
+      "md5": "636a4417e88d8509f9b24857d3880cd0",
+      "size_bytes": 7855,
+      "deployed_at": "2026-10-18T22:04:56.129916",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/tflite_detector.py"
+    },
+    "backup/obstacle_lane_stack/ai/tracker.py": {
+      "md5": "ea243145348c5c7c046fc0bc80553077",
+      "size_bytes": 3655,
+      "deployed_at": "2026-10-18T22:04:56.142745",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/tracker.py"
+    },
+    "backup/obstacle_lane_stack/ai/visualization.py": {
+      "md5": "046dc30a15400d2961c337c2ef3af9cc",
+      "size_bytes": 6044,
+      "deployed_at": "2026-10-18T22:04:56.206469",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/visualization.py"
+    },
+    "backup/obstacle_lane_stack/ai/__init__.py": {
+      "md5": "158c980fd7e76028d2d7392c7fc1c0df",
+      "size_bytes": 595,
+      "deployed_at": "2026-10-18T22:04:56.217249",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/ai/__init__.py"
+    },
+    "backup/obstacle_lane_stack/control/controller.py": {
+      "md5": "1a7837631709b340093a0197f9c7c562",
+      "size_bytes": 6207,
+      "deployed_at": "2026-10-18T22:04:56.272139",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/control/controller.py"
+    },
+    "backup/obstacle_lane_stack/control/pid.py": {
+      "md5": "aa87f2325d604457b20457989c22ee88",
+      "size_bytes": 2028,
+      "deployed_at": "2026-10-18T22:04:56.288541",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/control/pid.py"
+    },
+    "backup/obstacle_lane_stack/control/serial_comm.py": {
+      "md5": "335393518a368f67d636a2986b23b525",
+      "size_bytes": 6935,
+      "deployed_at": "2026-10-18T22:04:56.333830",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/control/serial_comm.py"
+    },
+    "backup/obstacle_lane_stack/control/__init__.py": {
+      "md5": "1339fb778aa8c77bc7cd5b1aaf7f3855",
+      "size_bytes": 110,
+      "deployed_at": "2026-10-18T22:04:56.343769",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/control/__init__.py"
+    },
+    "backup/obstacle_lane_stack/dashboard/app.py": {
+      "md5": "e478a1874e1513e617fd51067d429c35",
+      "size_bytes": 92066,
+      "deployed_at": "2026-10-18T22:04:56.428076",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/dashboard/app.py"
+    },
+    "backup/obstacle_lane_stack/dashboard/template.html": {
+      "md5": "037af8878ea80875394e5dbffe20aca4",
+      "size_bytes": 90295,
+      "deployed_at": "2026-10-18T22:04:56.554743",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/dashboard/template.html"
+    },
+    "backup/obstacle_lane_stack/dashboard/__init__.py": {
+      "md5": "1c4ada9e67858df2cdf5571d6c3b0c98",
+      "size_bytes": 72,
+      "deployed_at": "2026-10-18T22:04:56.565429",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/dashboard/__init__.py"
+    },
+    "backup/obstacle_lane_stack/hardware/bluetooth_server.py": {
+      "md5": "1b273d0b07ac4d3964465587915ada88",
+      "size_bytes": 10718,
+      "deployed_at": "2026-10-18T22:04:56.622198",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/hardware/bluetooth_server.py"
+    },
+    "backup/obstacle_lane_stack/hardware/motors.py": {
+      "md5": "bbd068bf34f27926a91a48a691d86e5e",
+      "size_bytes": 15029,
+      "deployed_at": "2026-10-18T22:04:56.641383",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/hardware/motors.py"
+    },
+    "backup/obstacle_lane_stack/hardware/servo.py": {
+      "md5": "58a0c57a62ea55b5d1db0e15e9d0cff0",
+      "size_bytes": 4884,
+      "deployed_at": "2026-10-18T22:04:56.709949",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/hardware/servo.py"
+    },
+    "backup/obstacle_lane_stack/hardware/__init__.py": {
+      "md5": "48b5a88a0f3ca64e1825ed60e310d6fe",
+      "size_bytes": 75,
+      "deployed_at": "2026-10-18T22:04:56.719108",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/hardware/__init__.py"
+    },
+    "backup/obstacle_lane_stack/navigation/autonomous_driver.py": {
+      "md5": "fea5044a33f78fe9fc9b2ab15ce998f0",
+      "size_bytes": 34025,
+      "deployed_at": "2026-10-18T22:04:56.783798",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/navigation/autonomous_driver.py"
+    },
+    "backup/obstacle_lane_stack/navigation/planner.py": {
+      "md5": "a197c7c09686fadc54ae612f5557bcad",
+      "size_bytes": 8827,
+      "deployed_at": "2026-10-18T22:04:56.800101",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/navigation/planner.py"
+    },
+    "backup/obstacle_lane_stack/navigation/state_machine.py": {
+      "md5": "99b0a843f391a09fa7fc4d9b32c054aa",
+      "size_bytes": 2508,
+      "deployed_at": "2026-10-18T22:04:56.811125",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/navigation/state_machine.py"
+    },
+    "backup/obstacle_lane_stack/navigation/waypoint.py": {
+      "md5": "70ab30c588576523ec0365c951b6daac",
+      "size_bytes": 4513,
+      "deployed_at": "2026-10-18T22:04:56.854980",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/navigation/waypoint.py"
+    },
+    "backup/obstacle_lane_stack/navigation/__init__.py": {
+      "md5": "eef3fe2eb8931288c7e13ed75123c2e3",
+      "size_bytes": 63,
+      "deployed_at": "2026-10-18T22:04:56.865711",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/navigation/__init__.py"
+    },
+    "backup/obstacle_lane_stack/sensors/ultrasonic.py": {
+      "md5": "93c577840b475f86e0fcefde1c748a28",
+      "size_bytes": 4814,
+      "deployed_at": "2026-10-18T22:04:56.921012",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/sensors/ultrasonic.py"
+    },
+    "backup/obstacle_lane_stack/sensors/__init__.py": {
+      "md5": "7e3c7982a80fdb8e8e4e6b66f82eb1c8",
+      "size_bytes": 69,
+      "deployed_at": "2026-10-18T22:04:56.931576",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/sensors/__init__.py"
+    },
+    "backup/obstacle_lane_stack/utils/fps.py": {
+      "md5": "f13e5d5fd15a1dd6d39c71e523924daa",
+      "size_bytes": 1514,
+      "deployed_at": "2026-10-18T22:04:56.950622",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/utils/fps.py"
+    },
+    "backup/obstacle_lane_stack/utils/logger.py": {
+      "md5": "099723a601185f74a18fb00daee7e07a",
+      "size_bytes": 1231,
+      "deployed_at": "2026-10-18T22:04:56.989409",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/utils/logger.py"
+    },
+    "backup/obstacle_lane_stack/utils/__init__.py": {
+      "md5": "043dbda8c4923c64493267be07607256",
+      "size_bytes": 57,
+      "deployed_at": "2026-10-18T22:04:57.013033",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/utils/__init__.py"
+    },
+    "backup/obstacle_lane_stack/vision/camera.py": {
+      "md5": "bcf4004bf43960783ea2c56ea27be7ac",
+      "size_bytes": 22530,
+      "deployed_at": "2026-10-18T22:04:57.073005",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/camera.py"
+    },
+    "backup/obstacle_lane_stack/vision/junction_detector.py": {
+      "md5": "be653e0db4682a45eb428b00f17d35f7",
+      "size_bytes": 3757,
+      "deployed_at": "2026-10-18T22:04:57.129790",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/junction_detector.py"
+    },
+    "backup/obstacle_lane_stack/vision/lane_detector.py": {
+      "md5": "1f4cbbd9194ea13c2b4e803775a16de3",
+      "size_bytes": 5070,
+      "deployed_at": "2026-10-18T22:04:57.149748",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/lane_detector.py"
+    },
+    "backup/obstacle_lane_stack/vision/object_detector.py": {
+      "md5": "7d346800e08ac46406ece03a76d5db35",
+      "size_bytes": 5505,
+      "deployed_at": "2026-10-18T22:04:57.190733",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/object_detector.py"
+    },
+    "backup/obstacle_lane_stack/vision/preprocessing.py": {
+      "md5": "29f3e65ac21bbf8e0121f15bac61029d",
+      "size_bytes": 2678,
+      "deployed_at": "2026-10-18T22:04:57.207478",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/preprocessing.py"
+    },
+    "backup/obstacle_lane_stack/vision/stream_receiver.py": {
+      "md5": "f2e75ad387e77bf3816e68bbb59096a4",
+      "size_bytes": 2852,
+      "deployed_at": "2026-10-18T22:04:57.218749",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/stream_receiver.py"
+    },
+    "backup/obstacle_lane_stack/vision/__init__.py": {
+      "md5": "946fb3147fc929d6473b0b1a82672f40",
+      "size_bytes": 124,
+      "deployed_at": "2026-10-18T22:04:57.230165",
+      "remote_path": "/home/alfin/autonomous_car/backup/obstacle_lane_stack/vision/__init__.py"
+    },
+    "behavioral_cloning/driver.py": {
+      "md5": "de59d258d0bd78ef1c2b95207623f932",
+      "size_bytes": 7300,
+      "deployed_at": "2026-10-18T22:04:57.276995",
+      "remote_path": "/home/alfin/autonomous_car/behavioral_cloning/driver.py"
+    },
+    "behavioral_cloning/model.py": {
+      "md5": "0e503eb836a22796206db7f91343ce0e",
+      "size_bytes": 2431,
+      "deployed_at": "2026-10-18T22:04:57.288256",
+      "remote_path": "/home/alfin/autonomous_car/behavioral_cloning/model.py"
+    },
+    "behavioral_cloning/README.md": {
+      "md5": "0549b02556db730e55a2ba2a605f841f",
+      "size_bytes": 613,
+      "deployed_at": "2026-10-18T22:04:57.326710",
+      "remote_path": "/home/alfin/autonomous_car/behavioral_cloning/README.md"
+    },
+    "behavioral_cloning/__init__.py": {
+      "md5": "965a791b6813fa52337fe48b5aa402f5",
+      "size_bytes": 171,
+      "deployed_at": "2026-10-18T22:04:57.338199",
+      "remote_path": "/home/alfin/autonomous_car/behavioral_cloning/__init__.py"
+    },
+    "models/yolov8n_full_integer_quant.tflite": {
+      "md5": "5635667ec8102deb53187fa896d5e8a4",
+      "size_bytes": 3250568,
+      "deployed_at": "2026-10-18T22:05:02.013928",
+      "remote_path": "/home/alfin/autonomous_car/models/yolov8n_full_integer_quant.tflite"
+    },
+    "tests/test_ai_model_pi4.py": {
+      "md5": "f829b950a62339d45bd243d50a4d60db",
+      "size_bytes": 4311,
+      "deployed_at": "2026-10-18T22:06:16.705381",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_ai_model_pi4.py"
+    },
+    "tests/test_live_inference.py": {
+      "md5": "e928daff2965e60703bde1e134f85074",
+      "size_bytes": 4908,
+      "deployed_at": "2026-10-22T21:19:25.230420",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_live_inference.py"
+    },
+    "tests/demo_ai_stream.py": {
+      "md5": "cdfbdcf33e3069f9bb97a69a4098ed5b",
+      "size_bytes": 10741,
+      "deployed_at": "2026-10-18T22:41:25.775717",
+      "remote_path": "/home/alfin/autonomous_car/tests/demo_ai_stream.py"
+    },
+    "tests/debug_coords.py": {
+      "md5": "8e5eb2b2e6e934a0ffca48452d653f7c",
+      "size_bytes": 1072,
+      "deployed_at": "2026-10-18T22:33:08.719934",
+      "remote_path": "/home/alfin/autonomous_car/tests/debug_coords.py"
+    },
+    "tests/test_module2_servo_camera.py": {
+      "md5": "5565394ca0d080b7f942ae4751c7d335",
+      "size_bytes": 4648,
+      "deployed_at": "2026-10-18T22:49:30.584849",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_module2_servo_camera.py"
+    },
+    "navigation/visual_navigator.py": {
+      "md5": "d7be46c8c93c6d541517ec61c7a135de",
+      "size_bytes": 8596,
+      "deployed_at": "2026-10-18T22:55:51.691640",
+      "remote_path": "/home/alfin/autonomous_car/navigation/visual_navigator.py"
+    },
+    "tests/test_module3_lane_and_destination.py": {
+      "md5": "d5596adbf7e794376ed168f28b918347",
+      "size_bytes": 7475,
+      "deployed_at": "2026-10-18T22:55:51.748793",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_module3_lane_and_destination.py"
+    },
+    "safety/safety_controller.py": {
+      "md5": "dd4a5e14269851e9caa20c977cf174be",
+      "size_bytes": 10786,
+      "deployed_at": "2026-10-18T23:04:07.404178",
+      "remote_path": "/home/alfin/autonomous_car/safety/safety_controller.py"
+    },
+    "safety/__init__.py": {
+      "md5": "b815e2b6157cc85a26ec6d0bdaff41b1",
+      "size_bytes": 300,
+      "deployed_at": "2026-10-18T23:01:32.559221",
+      "remote_path": "/home/alfin/autonomous_car/safety/__init__.py"
+    },
+    "tests/test_module4_obstacle_avoidance.py": {
+      "md5": "e1eac4492f29438a31ac32c0fd79b4e3",
+      "size_bytes": 10038,
+      "deployed_at": "2026-10-18T23:03:33.674552",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_module4_obstacle_avoidance.py"
+    },
+    "control/state_machine.py": {
+      "md5": "f8c9a5b44581046cbd7d6e8e4d7c8ad0",
+      "size_bytes": 11659,
+      "deployed_at": "2026-10-18T23:11:22.460577",
+      "remote_path": "/home/alfin/autonomous_car/control/state_machine.py"
+    },
+    "tests/test_module5_motor_pid_fsm.py": {
+      "md5": "8d5e7105b52f91bf529c594e485ed765",
+      "size_bytes": 10108,
+      "deployed_at": "2026-10-18T23:11:22.549424",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_module5_motor_pid_fsm.py"
+    },
+    "tests/test_module6_dashboard_and_autostart.py": {
+      "md5": "15e163713089c26c47bcc6d99c326590",
+      "size_bytes": 6065,
+      "deployed_at": "2026-10-18T23:24:39.322187",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_module6_dashboard_and_autostart.py"
+    },
+    "docs/wiring_diagram.svg": {
+      "md5": "3f04593d96b1da08a85263fd5ae01eaf",
+      "size_bytes": 16801,
+      "deployed_at": "2026-10-26T22:03:32.693723",
+      "remote_path": "/home/alfin/autonomous_car/docs/wiring_diagram.svg"
+    },
+    "scripts/fix_svg_render.py": {
+      "md5": "b5c4370dabf4ae9252daa650777b4c93",
+      "size_bytes": 554,
+      "deployed_at": "2026-10-19T14:30:26.536199",
+      "remote_path": "/home/alfin/autonomous_car/scripts/fix_svg_render.py"
+    },
+    "scripts/generate_pdf_manual.py": {
+      "md5": "2a90f853b139a1e71a428d3e93cae7f4",
+      "size_bytes": 32871,
+      "deployed_at": "2026-10-19T14:30:26.589690",
+      "remote_path": "/home/alfin/autonomous_car/scripts/generate_pdf_manual.py"
+    },
+    "tests/test_darkness_blindness.py": {
+      "md5": "1828321320cb82df7fc37da18a7b2080",
+      "size_bytes": 2189,
+      "deployed_at": "2026-10-19T14:39:27.925110",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_darkness_blindness.py"
+    },
+    "tests/test_pose_scan_and_3d_dest.py": {
+      "md5": "eee233a9b91b71b44003347fcc4477e9",
+      "size_bytes": 5370,
+      "deployed_at": "2026-10-21T23:36:53.136101",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_pose_scan_and_3d_dest.py"
+    },
+    "tests/test_3d_world_map_and_active_gaze.py": {
+      "md5": "28af368bf399408d5c2d58c3b46221e6",
+      "size_bytes": 8351,
+      "deployed_at": "2026-10-22T21:19:25.184333",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_3d_world_map_and_active_gaze.py"
+    },
+    "tests/test_live_api_reproject.py": {
+      "md5": "81966b752b890625f79203da835cd057",
+      "size_bytes": 2857,
+      "deployed_at": "2026-10-22T21:19:25.201381",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_live_api_reproject.py"
+    },
+    "scripts/test_corridor.py": {
+      "md5": "da6bd2684db76c94b51d09e1fefe0c03",
+      "size_bytes": 1125,
+      "deployed_at": "2026-10-19T16:28:04.500609",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_corridor.py"
+    },
+    "scripts/test_servo_direct.py": {
+      "md5": "3f4294ee082b009808fcbba7f7137569",
+      "size_bytes": 897,
+      "deployed_at": "2026-10-21T21:18:44.317442",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_servo_direct.py"
+    },
+    "docs/ultrasonic_wiring_diagram.svg": {
+      "md5": "b685e05c6f1c40178bdd306c8e138c95",
+      "size_bytes": 16274,
+      "deployed_at": "2026-10-21T21:20:53.951438",
+      "remote_path": "/home/alfin/autonomous_car/docs/ultrasonic_wiring_diagram.svg"
+    },
+    "scripts/generate_ultrasonic_diagram.py": {
+      "md5": "fbb9b3bf23212a0862f5c2b34105f399",
+      "size_bytes": 16700,
+      "deployed_at": "2026-10-21T21:20:54.149969",
+      "remote_path": "/home/alfin/autonomous_car/scripts/generate_ultrasonic_diagram.py"
+    },
+    "scripts/test_ultrasonic_hardware.py": {
+      "md5": "91d69662895cf74ee94b45f919688930",
+      "size_bytes": 1853,
+      "deployed_at": "2026-10-21T21:22:54.879537",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_ultrasonic_hardware.py"
+    },
+    "tests/test_blind_spot_recovery.py": {
+      "md5": "1a2a5b0ca301acff944295d3ff9a8ed6",
+      "size_bytes": 4382,
+      "deployed_at": "2026-10-21T22:31:00.951158",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_blind_spot_recovery.py"
+    },
+    "tests/test_obstacle_avoidance_and_reverse.py": {
+      "md5": "4a19012441490a2c4157c1583306c2c1",
+      "size_bytes": 8931,
+      "deployed_at": "2026-10-23T00:48:09.685866",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_obstacle_avoidance_and_reverse.py"
+    },
+    "tests/test_destination_arrival_stop.py": {
+      "md5": "fb6d56b013fe76240149f9ddbb459bad",
+      "size_bytes": 5461,
+      "deployed_at": "2026-10-21T23:36:53.082697",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_destination_arrival_stop.py"
+    },
+    "tests/test_live_hc_reading.py": {
+      "md5": "720572b9d58ecbdb6df5ceff7862112c",
+      "size_bytes": 618,
+      "deployed_at": "2026-10-21T23:46:03.167213",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_live_hc_reading.py"
+    },
+    "tests/test_left_right_cam_scan_and_maneuver.py": {
+      "md5": "e410169e0bab32b95a3e01d5cf9e40f2",
+      "size_bytes": 6848,
+      "deployed_at": "2026-10-22T00:20:32.354377",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_left_right_cam_scan_and_maneuver.py"
+    },
+    "control/motor_controller.py": {
+      "md5": "4872235a8b20f254b7b8410f8f9d8ec8",
+      "size_bytes": 481,
+      "deployed_at": "2026-10-22T21:19:24.602335",
+      "remote_path": "/home/alfin/autonomous_car/control/motor_controller.py"
+    },
+    "control/safety_supervisor.py": {
+      "md5": "c6e2adf106b41419353961b689a5bdc1",
+      "size_bytes": 12571,
+      "deployed_at": "2026-10-29T01:20:47.088998",
+      "remote_path": "/home/alfin/autonomous_car/control/safety_supervisor.py"
+    },
+    "diagnostics/logger.py": {
+      "md5": "9cc4d2576edcea4cbb6db7631eb92920",
+      "size_bytes": 1707,
+      "deployed_at": "2026-10-22T21:19:24.756042",
+      "remote_path": "/home/alfin/autonomous_car/diagnostics/logger.py"
+    },
+    "diagnostics/performance_monitor.py": {
+      "md5": "02afdb149271e6e261eb8d2c08a40aee",
+      "size_bytes": 4834,
+      "deployed_at": "2026-10-22T21:19:24.777067",
+      "remote_path": "/home/alfin/autonomous_car/diagnostics/performance_monitor.py"
+    },
+    "diagnostics/__init__.py": {
+      "md5": "85cedba07555d9bcf128a451ffeac847",
+      "size_bytes": 231,
+      "deployed_at": "2026-10-22T21:19:24.792785",
+      "remote_path": "/home/alfin/autonomous_car/diagnostics/__init__.py"
+    },
+    "navigation/localization.py": {
+      "md5": "2ecf1020f2d0998543bedcd4acea5949",
+      "size_bytes": 5559,
+      "deployed_at": "2026-10-22T21:19:24.967388",
+      "remote_path": "/home/alfin/autonomous_car/navigation/localization.py"
+    },
+    "navigation/local_planner.py": {
+      "md5": "68442add061e4aadf345f91ee2a93eea",
+      "size_bytes": 12800,
+      "deployed_at": "2026-10-22T21:19:24.987938",
+      "remote_path": "/home/alfin/autonomous_car/navigation/local_planner.py"
+    },
+    "navigation/obstacle_avoidance.py": {
+      "md5": "861e80a244d41492d8623c6d16668154",
+      "size_bytes": 272,
+      "deployed_at": "2026-10-22T21:19:25.017577",
+      "remote_path": "/home/alfin/autonomous_car/navigation/obstacle_avoidance.py"
+    },
+    "perception/camera.py": {
+      "md5": "caf7076f41a36a2ba5db2a57e6274ef7",
+      "size_bytes": 474,
+      "deployed_at": "2026-10-22T21:19:25.079287",
+      "remote_path": "/home/alfin/autonomous_car/perception/camera.py"
+    },
+    "perception/yolo_detector.py": {
+      "md5": "5ed20052d1c60d0dfa1dd0054e46ed23",
+      "size_bytes": 5385,
+      "deployed_at": "2026-10-22T21:19:25.120757",
+      "remote_path": "/home/alfin/autonomous_car/perception/yolo_detector.py"
+    },
+    "perception/__init__.py": {
+      "md5": "e2cac536aa98ccf8d686f3fe685421f3",
+      "size_bytes": 296,
+      "deployed_at": "2026-10-22T21:39:04.409962",
+      "remote_path": "/home/alfin/autonomous_car/perception/__init__.py"
+    },
+    "tests/test_localization.py": {
+      "md5": "473035444c06cfb22d19b5449910b93e",
+      "size_bytes": 2129,
+      "deployed_at": "2026-10-22T21:19:25.264757",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_localization.py"
+    },
+    "tests/test_local_planner.py": {
+      "md5": "021572082e7deef2313598fbe94049a7",
+      "size_bytes": 6614,
+      "deployed_at": "2026-10-22T21:19:25.298291",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_local_planner.py"
+    },
+    "tests/test_motor_controller.py": {
+      "md5": "347067193191cd923fc1d1b2c11cd2b5",
+      "size_bytes": 3097,
+      "deployed_at": "2026-10-22T21:19:25.345490",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_motor_controller.py"
+    },
+    "tests/test_performance_monitor.py": {
+      "md5": "079a0d2b5c7de3f3aba8e4f0b42c568c",
+      "size_bytes": 2104,
+      "deployed_at": "2026-10-22T21:19:25.380240",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_performance_monitor.py"
+    },
+    "tests/test_safety.py": {
+      "md5": "a6e053518c9ca971b12d0628673713dd",
+      "size_bytes": 8322,
+      "deployed_at": "2026-10-26T11:14:13.578386",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_safety.py"
+    },
+    "tests/test_sensor_validation.py": {
+      "md5": "83ac889d0737fa74ed23209d52364b41",
+      "size_bytes": 4931,
+      "deployed_at": "2026-10-22T21:19:25.476067",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_sensor_validation.py"
+    },
+    "scripts/test_midas.py": {
+      "md5": "1fc2467de1324ddb0c6eeb5fd5752850",
+      "size_bytes": 1109,
+      "deployed_at": "2026-10-22T21:30:53.741203",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_midas.py"
+    },
+    "ai/wall_detector.py": {
+      "md5": "ae606100bbf2daea2145caf2bcd1631f",
+      "size_bytes": 14487,
+      "deployed_at": "2026-10-22T22:48:00.280675",
+      "remote_path": "/home/alfin/autonomous_car/ai/wall_detector.py"
+    },
+    "tests/test_wall_detector.py": {
+      "md5": "9856a6a050213a326c508065c459c21e",
+      "size_bytes": 2829,
+      "deployed_at": "2026-10-22T21:39:04.450057",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_wall_detector.py"
+    },
+    "scripts/debug_wall_detector.py": {
+      "md5": "e5c75dd99090cd0a1417eef9c65362f3",
+      "size_bytes": 1701,
+      "deployed_at": "2026-10-22T22:09:44.116938",
+      "remote_path": "/home/alfin/autonomous_car/scripts/debug_wall_detector.py"
+    },
+    "scripts/test_patch.py": {
+      "md5": "84f6a197ebf30dc6042456ecea3b6194",
+      "size_bytes": 687,
+      "deployed_at": "2026-10-22T22:11:10.714916",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_patch.py"
+    },
+    "slam/orb_slam_mapper.py": {
+      "md5": "0d76f62ae07eb5809d48739f7a669930",
+      "size_bytes": 15922,
+      "deployed_at": "2026-10-23T01:39:06.663258",
+      "remote_path": "/home/alfin/autonomous_car/slam/orb_slam_mapper.py"
+    },
+    "slam/orb_visual_odometry.py": {
+      "md5": "943232f107affe4eb46cb577fe249c15",
+      "size_bytes": 15212,
+      "deployed_at": "2026-10-23T01:39:06.724798",
+      "remote_path": "/home/alfin/autonomous_car/slam/orb_visual_odometry.py"
+    },
+    "slam/slam_navigation_bridge.py": {
+      "md5": "2ff257b8b91d081640fe76e224833725",
+      "size_bytes": 7262,
+      "deployed_at": "2026-10-23T01:39:06.761301",
+      "remote_path": "/home/alfin/autonomous_car/slam/slam_navigation_bridge.py"
+    },
+    "slam/__init__.py": {
+      "md5": "5ac813889098c0b7c387281c103f16fc",
+      "size_bytes": 512,
+      "deployed_at": "2026-10-23T01:39:06.799292",
+      "remote_path": "/home/alfin/autonomous_car/slam/__init__.py"
+    },
+    "tests/test_ground_station_fallback.py": {
+      "md5": "4348cf205f38349e9b1ed58285d24fe6",
+      "size_bytes": 7490,
+      "deployed_at": "2026-10-23T01:39:06.915842",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_ground_station_fallback.py"
+    },
+    "tests/test_orb_slam_mapper.py": {
+      "md5": "59027b2a25415f6e736f7a17871c63ab",
+      "size_bytes": 2931,
+      "deployed_at": "2026-10-23T01:39:06.974818",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_orb_slam_mapper.py"
+    },
+    "tests/test_orb_visual_odometry.py": {
+      "md5": "9fbc2263f050944cf2c77b4cc305bcd0",
+      "size_bytes": 4497,
+      "deployed_at": "2026-10-23T01:39:07.051282",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_orb_visual_odometry.py"
+    },
+    "tests/test_slam_navigation_safety.py": {
+      "md5": "31a79214df3a8291cc2d1ffe16ee5ef1",
+      "size_bytes": 4516,
+      "deployed_at": "2026-10-23T01:39:07.098148",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_slam_navigation_safety.py"
+    },
+    "ai/traffic_rules.py": {
+      "md5": "2550c33f4992cf5bbc9b0c46008574bb",
+      "size_bytes": 12843,
+      "deployed_at": "2026-10-23T01:50:12.048531",
+      "remote_path": "/home/alfin/autonomous_car/ai/traffic_rules.py"
+    },
+    "tests/test_lane_assist_and_traffic_rules.py": {
+      "md5": "9e00b56cf34cd36fe5264eb54b3bc004",
+      "size_bytes": 15637,
+      "deployed_at": "2026-10-25T03:27:15.830331",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_lane_assist_and_traffic_rules.py"
+    },
+    "navigation/marker_route.py": {
+      "md5": "52d216d266436b5bde8c71316a0bf2e3",
+      "size_bytes": 10319,
+      "deployed_at": "2026-10-26T11:56:37.552449",
+      "remote_path": "/home/alfin/autonomous_car/navigation/marker_route.py"
+    },
+    "behavioral_cloning.py": {
+      "md5": "ae307f6436a0d1196c70a5a7f3889beb",
+      "size_bytes": 37211,
+      "deployed_at": "2026-10-29T02:10:27.921845",
+      "remote_path": "/home/alfin/autonomous_car/behavioral_cloning.py"
+    },
+    "models/SidewalkPilot-v3.1b.onnx": {
+      "md5": "aaad856ab406ffb4484cd822e6d6f7e4",
+      "size_bytes": 22136200,
+      "deployed_at": "2026-10-26T20:59:47.531601",
+      "remote_path": "/home/alfin/autonomous_car/models/SidewalkPilot-v3.1b.onnx"
+    },
+    "models/SidewalkPilot-v3.1b.NOTICE.md": {
+      "md5": "2cce8af4dceebc5fcb2dd8788c154cd8",
+      "size_bytes": 350,
+      "deployed_at": "2026-10-26T20:58:55.585122",
+      "remote_path": "/home/alfin/autonomous_car/models/SidewalkPilot-v3.1b.NOTICE.md"
+    },
+    "../USER_MANUAL.md": {
+      "md5": "5975c2afe466e5324d4ee5fc0d9136d9",
+      "size_bytes": 18645,
+      "deployed_at": "2026-10-26T22:03:32.481018",
+      "remote_path": "/home/alfin/autonomous_car/../USER_MANUAL.md"
+    },
+    "arduino_reference/AllMotorsTest.ino": {
+      "md5": "2a015253fee4db5daec28f9e5c35670f",
+      "size_bytes": 3541,
+      "deployed_at": "2026-10-26T23:37:24.563544",
+      "remote_path": "/home/alfin/autonomous_car/arduino_reference/AllMotorsTest.ino"
+    },
+    "arduino_reference/SelfDrivingCar.ino": {
+      "md5": "7dc20682f407ebeb593e0397e935be21",
+      "size_bytes": 7701,
+      "deployed_at": "2026-10-29T01:20:47.050102",
+      "remote_path": "/home/alfin/autonomous_car/arduino_reference/SelfDrivingCar.ino"
+    },
+    "scripts/test_dashboard.py": {
+      "md5": "a4960e8322000b6f8f105d14edd3dc93",
+      "size_bytes": 104144,
+      "deployed_at": "2026-10-29T04:54:26.109109",
+      "remote_path": "/home/alfin/autonomous_car/scripts/test_dashboard.py"
+    },
+    "scripts/servo_test.py": {
+      "md5": "f96390362f1845a006e96fc37e991db4",
+      "size_bytes": 1746,
+      "deployed_at": "2026-10-27T00:30:40.528469",
+      "remote_path": "/home/alfin/autonomous_car/scripts/servo_test.py"
+    },
+    "scripts/pi_servo_test.py": {
+      "md5": "a3955653c93b93e8f61babf13e2433d2",
+      "size_bytes": 2424,
+      "deployed_at": "2026-10-27T00:33:59.908930",
+      "remote_path": "/home/alfin/autonomous_car/scripts/pi_servo_test.py"
+    },
+    "scripts/check_ultrasonic.py": {
+      "md5": "36047f198dde478cfff21a8bec339a05",
+      "size_bytes": 548,
+      "deployed_at": "2026-10-27T01:02:04.680449",
+      "remote_path": "/home/alfin/autonomous_car/scripts/check_ultrasonic.py"
+    },
+    "control/line_follower.py": {
+      "md5": "dd813fda82b000e1ee3f7bb21558a1b0",
+      "size_bytes": 51572,
+      "deployed_at": "2026-10-29T04:23:02.406013",
+      "remote_path": "/home/alfin/autonomous_car/control/line_follower.py"
+    },
+    "scripts/run_autonomous_line_follower.py": {
+      "md5": "4881e084536fa845a2457c416f979e4d",
+      "size_bytes": 4194,
+      "deployed_at": "2026-10-28T09:03:05.255472",
+      "remote_path": "/home/alfin/autonomous_car/scripts/run_autonomous_line_follower.py"
+    },
+    "navigation/aruco_navigator.py": {
+      "md5": "58e6f2bd0f8d54b895bfe83b24045b78",
+      "size_bytes": 10211,
+      "deployed_at": "2026-10-29T01:38:57.004866",
+      "remote_path": "/home/alfin/autonomous_car/navigation/aruco_navigator.py"
+    },
+    "scripts/autostart_browser.sh": {
+      "md5": "d63e2b87f0b2aa208ef4f9e02f2de5d1",
+      "size_bytes": 612,
+      "deployed_at": "2026-10-27T02:47:26.117371",
+      "remote_path": "/home/alfin/autonomous_car/scripts/autostart_browser.sh"
+    },
+    "scripts/rccar-dashboard.desktop": {
+      "md5": "45f1fa79fad0db29bd305152237a5a01",
+      "size_bytes": 247,
+      "deployed_at": "2026-10-27T02:45:38.072790",
+      "remote_path": "/home/alfin/autonomous_car/scripts/rccar-dashboard.desktop"
+    },
+    "aruco_markers.pdf": {
+      "md5": "952a9957da65217956b793b563f94298",
+      "size_bytes": 107903,
+      "deployed_at": "2026-10-28T14:34:57.252179",
+      "remote_path": "/home/alfin/autonomous_car/aruco_markers.pdf"
+    },
+    "dashboard/template.html.bak": {
+      "md5": "2859223422e56a77c8b9046eb5848afe",
+      "size_bytes": 137290,
+      "deployed_at": "2026-10-28T14:34:57.585795",
+      "remote_path": "/home/alfin/autonomous_car/dashboard/template.html.bak"
+    },
+    "docs/system_workflow.svg": {
+      "md5": "a89ae01bf87b135a69ec492e9d8a93c0",
+      "size_bytes": 14085,
+      "deployed_at": "2026-10-28T14:34:57.620576",
+      "remote_path": "/home/alfin/autonomous_car/docs/system_workflow.svg"
+    },
+    "scripts/build_redesigned_ui.py": {
+      "md5": "cf14353e9a4976101348719f39037313",
+      "size_bytes": 86089,
+      "deployed_at": "2026-10-28T14:34:57.721318",
+      "remote_path": "/home/alfin/autonomous_car/scripts/build_redesigned_ui.py"
+    },
+    "scripts/run_all_models_50s.py": {
+      "md5": "00e4b95484435ba4f46431d19eed6e62",
+      "size_bytes": 12070,
+      "deployed_at": "2026-10-28T14:34:57.743806",
+      "remote_path": "/home/alfin/autonomous_car/scripts/run_all_models_50s.py"
+    },
+    "control/obstacle_avoider.py": {
+      "md5": "1048992220c305c9e38bdb7cc39367ce",
+      "size_bytes": 11315,
+      "deployed_at": "2026-10-29T02:26:30.354356",
+      "remote_path": "/home/alfin/autonomous_car/control/obstacle_avoider.py"
+    },
+    ".pytest_cache/.gitignore": {
+      "md5": "85757ff2adfbaf633a1dd16a265f8826",
+      "size_bytes": 39,
+      "deployed_at": "2026-10-29T01:20:46.972824",
+      "remote_path": "/home/alfin/autonomous_car/.pytest_cache/.gitignore"
+    },
+    ".pytest_cache/CACHEDIR.TAG": {
+      "md5": "f552fcc7d0ecdb6607533519d6898357",
+      "size_bytes": 191,
+      "deployed_at": "2026-10-29T01:20:46.986637",
+      "remote_path": "/home/alfin/autonomous_car/.pytest_cache/CACHEDIR.TAG"
+    },
+    ".pytest_cache/README.md": {
+      "md5": "11c87436abd496719b2727c87d217993",
+      "size_bytes": 310,
+      "deployed_at": "2026-10-29T01:20:46.998636",
+      "remote_path": "/home/alfin/autonomous_car/.pytest_cache/README.md"
+    },
+    ".pytest_cache/v/cache/nodeids": {
+      "md5": "61e04b56c4e711d65d50da672911c265",
+      "size_bytes": 761,
+      "deployed_at": "2026-10-29T01:20:47.017882",
+      "remote_path": "/home/alfin/autonomous_car/.pytest_cache/v/cache/nodeids"
+    },
+    "arduino_reference/SelfDrivingCar_v2.ino": {
+      "md5": "0a716ab27f924f5197e9f645688b216b",
+      "size_bytes": 9451,
+      "deployed_at": "2026-10-29T01:20:47.068610",
+      "remote_path": "/home/alfin/autonomous_car/arduino_reference/SelfDrivingCar_v2.ino"
+    },
+    "tests/test_obstacle_avoider.py": {
+      "md5": "fa5be2dd589bd220b6960904ed5e99e6",
+      "size_bytes": 3643,
+      "deployed_at": "2026-10-29T01:20:47.157364",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_obstacle_avoider.py"
+    },
+    "scripts/webrtc_stream.py": {
+      "md5": "2ab9e66dbe8d15e315b3ddab60be57fa",
+      "size_bytes": 5259,
+      "deployed_at": "2026-10-29T01:36:51.652308",
+      "remote_path": "/home/alfin/autonomous_car/scripts/webrtc_stream.py"
+    },
+    "dashboard/template.pre-redesign.html": {
+      "md5": "2fb10b3d4448c7ba134a920a32d580a5",
+      "size_bytes": 157801,
+      "deployed_at": "2026-10-29T01:49:23.626518",
+      "remote_path": "/home/alfin/autonomous_car/dashboard/template.pre-redesign.html"
+    },
+    "tests/test_free_space.py": {
+      "md5": "3d9dea11faddae7f90a74b345dbc256b",
+      "size_bytes": 3525,
+      "deployed_at": "2026-10-29T01:49:23.663840",
+      "remote_path": "/home/alfin/autonomous_car/tests/test_free_space.py"
+    },
+    "vision/free_space.py": {
+      "md5": "c1363562ed79c045740a4c40a092dd4e",
+      "size_bytes": 7029,
+      "deployed_at": "2026-10-29T01:49:23.701166",
+      "remote_path": "/home/alfin/autonomous_car/vision/free_space.py"
+    },
+    "utils/stage_timer.py": {
+      "md5": "fa592e57bad8570491bf45c26ada8e28",
+      "size_bytes": 2682,
+      "deployed_at": "2026-10-29T02:01:30.787468",
+      "remote_path": "/home/alfin/autonomous_car/utils/stage_timer.py"
+    },
+    "utils/telemetry.py": {
+      "md5": "b51b1a79e0c2687b79cba3e486aea067",
+      "size_bytes": 5397,
+      "deployed_at": "2026-10-29T02:01:30.803219",
+      "remote_path": "/home/alfin/autonomous_car/utils/telemetry.py"
+    },
+    "utils/session_replay.py": {
+      "md5": "a19481e3002d118fdc1f91eda6a8f0b6",
+      "size_bytes": 12072,
+      "deployed_at": "2026-10-29T02:01:30.820738",
+      "remote_path": "/home/alfin/autonomous_car/utils/session_replay.py"
+    },
+    "scripts/pi_pilot_test.sh": {
+      "md5": "a144701894c02d735c793e6cd84f854d",
+      "size_bytes": 1733,
+      "deployed_at": "2026-10-29T02:06:50.103350",
+      "remote_path": "/home/alfin/autonomous_car/scripts/pi_pilot_test.sh"
+    },
+    "scripts/diag_ultrasonic.py": {
+      "md5": "e72543c5673290112b84807672ad0f3c",
+      "size_bytes": 5102,
+      "deployed_at": "2026-10-29T02:16:12.383527",
+      "remote_path": "/home/alfin/autonomous_car/scripts/diag_ultrasonic.py"
+    },
+    "vision/lane_tracker.py": {
+      "md5": "af92633ab775f896d31c30880e786cb7",
+      "size_bytes": 23753,
+      "deployed_at": "2026-10-29T03:04:28.786516",
+      "remote_path": "/home/alfin/autonomous_car/vision/lane_tracker.py"
+    },
+    "control/side_look.py": {
+      "md5": "95b08e982b9b3d592dcd8bf215da5794",
+      "size_bytes": 8247,
+      "deployed_at": "2026-10-29T03:53:57.057219",
+      "remote_path": "/home/alfin/autonomous_car/control/side_look.py"
+    },
+    "vision/side_obstacle.py": {
+      "md5": "6fe1e6583aec59878a954e35c196323b",
+      "size_bytes": 7396,
+      "deployed_at": "2026-10-29T03:53:56.988582",
+      "remote_path": "/home/alfin/autonomous_car/vision/side_obstacle.py"
+    }
+  },
+  "last_deploy": {
+    "timestamp": "2026-10-29T04:54:26.118904",
+    "target_host": "10.91.16.78",
+    "git_commit": "bdd6a64564971f4c6c38c30f2d37f4b86f51c78f",
+    "git_branch": "master",
+    "files_pushed_count": 1
+  }
+}

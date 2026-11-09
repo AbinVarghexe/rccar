@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Camera Module for Raspberry Pi 3 CSI Camera (OV5647 / Pi Camera v1).
 Uses Picamera2 with direct hardware JPEG capture for non-blocking, fluid streaming.
@@ -54,12 +55,22 @@ class Camera:
 
     def __init__(
         self,
+        config: Optional[object] = None,
         width: int = 640,
         height: int = 480,
         flip_h: bool = False,
         flip_v: bool = False,
         rotation: int = 0,
     ) -> None:
+        if config is not None:
+            if hasattr(config, "width"):
+                width = getattr(config, "width", width)
+                height = getattr(config, "height", height)
+                flip_h = getattr(config, "flip_h", flip_h)
+                flip_v = getattr(config, "flip_v", flip_v)
+            elif isinstance(config, int):
+                width = config
+
         self.width:    int  = width
         self.height:   int  = height
         self.flip_h:   bool = flip_h
@@ -72,6 +83,8 @@ class Camera:
         self._lock          = threading.Lock()
         self._frame:        Optional[bytes]  = None
         self._latest_bgr:   Optional[object] = None
+        self._last_frame_at: float = 0.0
+        self._last_jpeg_requested_at: float = time.monotonic()
         self._hud_annotator: Optional[object] = None
         self.overlay_enabled: bool           = True
         self._running:      bool             = False
@@ -126,6 +139,14 @@ class Camera:
     # ------------------------------------------------------------------ #
     def start(self) -> "Camera":
         """Initialize camera backend (Picamera2 first, OpenCV fallback) and start thread."""
+        # Clean up any lingering rpicam processes on Linux before acquiring hardware
+        if sys.platform.startswith("linux"):
+            try:
+                import subprocess
+                subprocess.run(["pkill", "-9", "-f", "rpicam"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
+            except Exception:
+                pass
+
         # 1. Try Picamera2 (CSI Camera OV5647 / Pi Camera v1/v2/v3)
         if USE_PICAMERA2:
             print("[CAMERA] Attempting Picamera2 (libcamera / CSI) initialization...")
@@ -134,12 +155,16 @@ class Camera:
                     self._camera = Picamera2(0)
                 except Exception:
                     self._camera = Picamera2()
+
+                # Native BGR888 video stream configuration with hardware ISP
                 config = self._camera.create_video_configuration(
-                    main={"size": (self.width, self.height)}
+                    main={"size": (self.width, self.height), "format": "RGB888"},
+                    buffer_count=4,
+                    controls={"FrameDurationLimits": (33333, 33333)}
                 )
                 self._camera.configure(config)
                 self._camera.start()
-                time.sleep(0.6)   # sensor warm-up
+                time.sleep(0.4)   # sensor warm-up
                 self._backend = "picamera2"
                 self.is_initialized = True
                 self._running = True
@@ -147,7 +172,7 @@ class Camera:
                     target=self._capture_loop, daemon=True, name="camera-capture"
                 )
                 self._thread.start()
-                print(f"[CAMERA READY] Picamera2 CSI @ {self.width}x{self.height} streaming active")
+                print(f"[CAMERA READY] Picamera2 CSI @ {self.width}x{self.height} (BGR888) streaming active")
                 return self
             except Exception as e:
                 print(f"[CAMERA] Picamera2 init failed: {e}")
@@ -209,35 +234,41 @@ class Camera:
     # ------------------------------------------------------------------ #
     def _capture_loop(self) -> None:
         """Continuously captures JPEG frames and BGR arrays from active backend."""
+        consecutive_errors = 0
         while self._running and self.is_initialized:
             try:
                 jpeg_bytes = None
                 bgr_img = None
 
-                # Backend 1: Picamera2
+                # Backend 1: Picamera2 (fast zero-copy DMA capture_array)
                 if self._backend == "picamera2" and self._camera:
-                    bio = io.BytesIO()
-                    self._camera.capture_file(bio, format="jpeg")
-                    raw_bytes = bio.getvalue()
-                    if raw_bytes and USE_CV2:
-                        arr = np.frombuffer(raw_bytes, dtype=np.uint8)
-                        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-                        if img is not None:
-                            img = self._apply_transforms_cv2(img)
-                            bgr_img = img
-                            _, enc = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
-                            raw_bytes = enc.tobytes()
-                    jpeg_bytes = raw_bytes
+                    raw_bgr = self._camera.capture_array("main")
+                    if raw_bgr is not None and raw_bgr.size > 0:
+                        consecutive_errors = 0
+                        if USE_CV2:
+                            bgr_img = self._apply_transforms_cv2(raw_bgr)
+                            needs_jpeg = (time.monotonic() - getattr(self, "_last_jpeg_requested_at", 0.0) < 3.0) or getattr(self, "_recording", False)
+                            if needs_jpeg:
+                                _, enc = cv2.imencode(".jpg", bgr_img, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
+                                jpeg_bytes = enc.tobytes()
+                    else:
+                        consecutive_errors += 1
+                        time.sleep(0.02)
 
                 # Backend 2: OpenCV
                 elif self._backend == "cv2" and self._cv2_cap:
                     ret, frame = self._cv2_cap.read()
                     if ret and frame is not None:
+                        consecutive_errors = 0
                         frame = self._apply_transforms_cv2(frame)
                         bgr_img = frame
-                        _, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
-                        jpeg_bytes = enc.tobytes()
+                        needs_jpeg = (time.monotonic() - getattr(self, "_last_jpeg_requested_at", 0.0) < 3.0) or getattr(self, "_recording", False)
+                        if needs_jpeg:
+                            _, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
+                            jpeg_bytes = enc.tobytes()
                     else:
+                        consecutive_errors += 1
+                        time.sleep(0.05)
                         time.sleep(0.05)
 
                 # Backend 3: Remote Raspberry Pi Camera Feed
@@ -280,11 +311,16 @@ class Camera:
                     _, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
                     jpeg_bytes = enc.tobytes()
 
-                if jpeg_bytes:
+                if jpeg_bytes or bgr_img is not None:
                     with self._lock:
-                        self._frame = jpeg_bytes
+                        # Freshness belongs to the camera capture, not to the
+                        # optional dashboard JPEG request. The control loop
+                        # consumes _latest_bgr even when no browser is open.
                         if bgr_img is not None:
                             self._latest_bgr = bgr_img
+                            self._last_frame_at = time.monotonic()
+                        if jpeg_bytes:
+                            self._frame = jpeg_bytes
                     # Feed recording buffer if active
                     with self._record_lock:
                         if self._recording:
@@ -329,6 +365,27 @@ class Camera:
                     pass
             return None
 
+    def capture_frame(self) -> Optional[np.ndarray]:
+        """Return the latest BGR frame for synchronous scan/calibration helpers.
+
+        Capture is already performed by the background thread. Keeping this
+        method as a frame-buffer read avoids competing with Picamera2 for the
+        camera device and gives callers a consistent NumPy image.
+        """
+        return self.get_bgr_frame()
+
+    def frame_age_seconds(self) -> Optional[float]:
+        """Return the age of the last captured frame, or None if no frame exists."""
+        with self._lock:
+            if self._last_frame_at <= 0:
+                return None
+            return max(0.0, time.monotonic() - self._last_frame_at)
+
+    def has_fresh_frame(self, max_age_seconds: float = 1.0) -> bool:
+        """Return whether the camera has produced a frame recently."""
+        age = self.frame_age_seconds()
+        return age is not None and age <= max(0.1, float(max_age_seconds))
+
     def set_hud_annotator(self, annotator_fn) -> None:
         """Sets callback function fn(bgr_frame) -> annotated_bgr_frame for HUD rendering."""
         with self._lock:
@@ -342,6 +399,7 @@ class Camera:
 
     def get_frame(self, with_overlay: Optional[bool] = None) -> Optional[bytes]:
         """Returns the latest JPEG frame (with or without HUD overlay)."""
+        self._last_jpeg_requested_at = time.monotonic()
         use_overlay = self.overlay_enabled if with_overlay is None else bool(with_overlay)
         with self._lock:
             bgr = self._latest_bgr
@@ -357,26 +415,30 @@ class Camera:
             except Exception as e:
                 logger.debug(f"[CAMERA] Overlay render error: {e}")
 
+        if raw_jpeg is None and bgr is not None and USE_CV2:
+            try:
+                _, enc = cv2.imencode(".jpg", bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
+                raw_jpeg = enc.tobytes()
+                with self._lock:
+                    self._frame = raw_jpeg
+            except Exception:
+                pass
+
         return raw_jpeg
 
     def generate_mjpeg(self, with_overlay: Optional[bool] = None):
         """Generator for MJPEG multipart streaming with optional HUD overlay."""
         while self._running or self.is_initialized:
-            if not self.is_initialized:
-                time.sleep(0.1)
-                frame = self._create_standby_frame("CAMERA STARTING...")
-            else:
-                frame = self.get_frame(with_overlay=with_overlay) or self._create_standby_frame("ACQUIRING FRAME...")
+            frame = self.get_frame(with_overlay=with_overlay) or self._create_standby_frame("STANDBY")
 
             if frame:
                 yield (
                     b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n"
-                    b"Content-Length: " + str(len(frame)).encode() + b"\r\n\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n"
                     + frame
                     + b"\r\n"
                 )
-            time.sleep(0.033)
+            time.sleep(0.035)
 
     # ------------------------------------------------------------------ #
     #  PHOTO CAPTURE

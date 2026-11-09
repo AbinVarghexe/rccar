@@ -5,3 +5,6 @@
 flask>=3.0.0
 pyserial>=3.5
 numpy>=1.24.0
+onnxruntime>=1.18.0
+# TensorFlow remains optional for legacy .h5 pilot models; the default
+# SidewalkPilot ONNX model uses onnxruntime above.

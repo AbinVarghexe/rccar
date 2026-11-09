@@ -10,6 +10,8 @@ Raspberry Pi 3 RC Car Web Dashboard.
 import os
 import sys
 import threading
+import math
+import time
 from typing import Optional, Dict, Any
 from flask import Flask, Response, jsonify, request, render_template_string, send_file
 
@@ -39,6 +41,9 @@ class DashboardServer:
         self.servo   = servo_controller or ServoController()
         self.camera  = camera or Camera()
         self.autonomous_driver = autonomous_driver
+        # Manual/gamepad owns the motors by default. AI must be explicitly
+        # selected through the control-mode endpoint.
+        self.control_mode = "manual"
 
         if self.camera and not self.camera.is_initialized:
             try:
@@ -79,6 +84,48 @@ class DashboardServer:
         self._lock = threading.Lock()
         self._setup_routes()
 
+    def _take_manual_control(self) -> None:
+        """Atomically hand motor ownership from autonomy to the operator.
+
+        Manual input is a deliberate override, but it never bypasses the
+        per-command ultrasonic/vision guards below.  Clearing the active
+        autonomous targets is important: merely calling set_enabled(False)
+        leaves a waypoint alive and allows a later AI tick to reacquire it.
+        The MotorController's dead-man watchdog then stops the vehicle when
+        keypad/gamepad heartbeats become silent.
+        """
+        driver = getattr(self, "autonomous_driver", None)
+        needs_takeover = self.control_mode != "manual" or bool(
+            driver and getattr(driver, "is_enabled", False)
+        )
+        self.control_mode = "manual"
+        if driver and needs_takeover:
+            try:
+                driver.set_enabled(False)
+            except Exception as exc:
+                print(f"[DASHBOARD] Manual override could not disarm AI: {exc}")
+            try:
+                driver.clear_marker_route()
+            except AttributeError:
+                # Older/mock drivers may not expose marker navigation.
+                pass
+            except Exception as exc:
+                print(f"[DASHBOARD] Manual override marker cleanup warning: {exc}")
+            try:
+                driver.clear_target_pin()
+            except AttributeError:
+                try:
+                    driver.clear_destinations()
+                except AttributeError:
+                    pass
+            except Exception as exc:
+                print(f"[DASHBOARD] Manual override target cleanup warning: {exc}")
+        self.motors.stop()
+        with self._lock:
+            self._telem["control_mode"] = "manual"
+            self._telem["autonomous_enabled"] = False
+            self._telem["manual_override"] = True
+
     # ------------------------------------------------------------------
     def _setup_routes(self) -> None:
 
@@ -105,7 +152,10 @@ class DashboardServer:
             if hasattr(self, "bluetooth") and self.bluetooth:
                 telem["bluetooth_connected"] = self.bluetooth.is_connected
             if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                if not self.autonomous_driver.is_enabled and self.control_mode == "ai":
+                    self.control_mode = "manual"
                 telem["autonomous_enabled"] = self.autonomous_driver.is_enabled
+                telem["control_mode"] = self.control_mode
                 telem["autonomous_mode"] = self.autonomous_driver.mode
                 telem["autonomous_action"] = self.autonomous_driver._current_decision.action.value
                 telem["autonomous_reason"] = self.autonomous_driver._current_decision.reason
@@ -113,6 +163,39 @@ class DashboardServer:
                 telem["clearance_left"] = getattr(self.autonomous_driver._current_decision, "clearance_left", 1.0)
                 telem["clearance_right"] = getattr(self.autonomous_driver._current_decision, "clearance_right", 1.0)
                 telem["fps"] = round(self.autonomous_driver._fps, 1)
+                telem["front_distance_cm"] = getattr(self.autonomous_driver, "_front_distance_cm", None)
+                # The legacy dashboard status is shared with manual commands.
+                # Project the autonomous owner/action into that field so the
+                # UI cannot report STOPPED while the AI driver is moving.
+                if self.control_mode == "ai" and self.autonomous_driver.is_enabled:
+                    telem["manual_override"] = False
+                    action = telem["autonomous_action"]
+                    telem["status"] = (
+                        "STOPPED"
+                        if action in ("STOP", "WAIT", "SCAN", "UNKNOWN")
+                        else action
+                    )
+                else:
+                    telem["manual_override"] = True
+                if hasattr(self.autonomous_driver, "get_current_reprojected_pin"):
+                    telem["target_pin"] = self.autonomous_driver.get_current_reprojected_pin()
+                elif hasattr(self.autonomous_driver, "visual_navigator") and self.autonomous_driver.visual_navigator:
+                    vn = self.autonomous_driver.visual_navigator
+                    if vn.manual_target:
+                        bearing = vn.last_target.bearing_deg if vn.last_target else 0.0
+                        telem["target_pin"] = {"x": vn.manual_target[0], "y": vn.manual_target[1], "bearing_deg": round(bearing, 1)}
+                    else:
+                        telem["target_pin"] = None
+                else:
+                    telem["target_pin"] = None
+
+            # Read Pi CPU temperature
+            try:
+                with open("/sys/class/thermal/thermal_zone0/temp", "r") as tf:
+                    telem["cpu_temp"] = round(float(tf.read().strip()) / 1000.0, 1)
+            except Exception:
+                telem["cpu_temp"] = 0.0
+
             return jsonify(telem)
 
         @self.app.route("/api/bluetooth/status")
@@ -140,6 +223,33 @@ class DashboardServer:
                 },
                 "bluetooth": bt_stat,
             })
+
+        @self.app.route("/api/diagnostics")
+        def api_diagnostics():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                driver = self.autonomous_driver
+                perf = getattr(driver, "perf_monitor", None)
+                if perf:
+                    return jsonify(perf.get_summary())
+            return jsonify({"status": "no diagnostics available"})
+
+        @self.app.route("/api/safety/emergency_stop", methods=["POST"])
+        def api_safety_estop():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                supervisor = getattr(self.autonomous_driver, "safety_supervisor", None)
+                if supervisor:
+                    supervisor.emergency_stop("Web Dashboard E-STOP button pressed")
+            if self.motors:
+                self.motors.stop()
+            return jsonify({"status": "EMERGENCY_STOP_ACTIVE"})
+
+        @self.app.route("/api/safety/reset", methods=["POST"])
+        def api_safety_reset():
+            if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                supervisor = getattr(self.autonomous_driver, "safety_supervisor", None)
+                if supervisor:
+                    supervisor.reset_emergency_stop()
+            return jsonify({"status": "EMERGENCY_STOP_RESET"})
 
         @self.app.route("/api/frame")
         def api_frame():
@@ -173,17 +283,25 @@ class DashboardServer:
                         self.camera.start()
                     except Exception:
                         pass
-                return Response(
+                response = Response(
                     self.camera.generate_mjpeg(with_overlay=with_overlay),
                     mimetype="multipart/x-mixed-replace; boundary=frame"
                 )
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                response.headers["Pragma"] = "no-cache"
+                return response
             return Response(b"", status=204)
 
         # ---- AUTONOMOUS DRIVING API ----------------------------------
         @self.app.route("/api/auto/status")
         def api_auto_status():
             if hasattr(self, "autonomous_driver") and self.autonomous_driver:
-                return jsonify(self.autonomous_driver.get_status())
+                self.autonomous_driver.record_ground_station_heartbeat()
+                if not self.autonomous_driver.is_enabled and self.control_mode == "ai":
+                    self.control_mode = "manual"
+                status = self.autonomous_driver.get_status()
+                status["control_mode"] = self.control_mode
+                return jsonify(status)
             return jsonify({
                 "autonomous_enabled": False,
                 "mode": "disabled",
@@ -202,9 +320,14 @@ class DashboardServer:
                 else:
                     new_val = not self.autonomous_driver.is_enabled
                 state = self.autonomous_driver.set_enabled(new_val)
+                self.control_mode = "ai" if state else "manual"
                 with self._lock:
                     self._telem["autonomous_enabled"] = state
-                return jsonify({"status": "success", "autonomous_enabled": state})
+                return jsonify({
+                    "status": "success",
+                    "autonomous_enabled": state,
+                    "control_mode": self.control_mode,
+                })
             return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
 
         @self.app.route("/api/auto/mode", methods=["POST"])
@@ -247,15 +370,330 @@ class DashboardServer:
                 return jsonify({"status": "success", "message": "Path discovery scan initiated"})
             return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
 
+        @self.app.route("/api/slam/status", methods=["GET"])
+        def api_slam_status():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and getattr(driver, "slam_bridge", None):
+                return jsonify({"status": "success", "slam": driver.slam_bridge.get_telemetry()})
+            return jsonify({"status": "unavailable", "message": "Visual SLAM not active"}), 200
+
+        @self.app.route("/api/slam/reset", methods=["POST"])
+        def api_slam_reset():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and hasattr(driver, "reset_slam"):
+                res = driver.reset_slam()
+                return jsonify(res)
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/ground_station/status", methods=["GET"])
+        def api_ground_station_status():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and hasattr(driver, "get_ground_station_status"):
+                driver.record_ground_station_heartbeat()
+                return jsonify({"status": "success", "ground_station": driver.get_ground_station_status()})
+            return jsonify({"status": "unavailable", "message": "Autonomous driver not active"}), 200
+
+        @self.app.route("/api/ground_station/ping", methods=["POST"])
+        def api_ground_station_ping():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and hasattr(driver, "record_ground_station_heartbeat"):
+                driver.record_ground_station_heartbeat()
+                return jsonify({"status": "success", "ground_station": driver.get_ground_station_status()})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/lane_assist/status", methods=["GET"])
+        def api_lane_assist_status():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver:
+                st = driver.get_status().get("lane_assist", {})
+                return jsonify({"status": "success", "lane_assist": st})
+            return jsonify({"status": "unavailable", "message": "Autonomous driver not active"}), 200
+
+        @self.app.route("/api/lane_assist/toggle", methods=["POST"])
+        def api_lane_assist_toggle():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and hasattr(driver, "toggle_lane_assist"):
+                data = request.json or {}
+                en = data.get("enabled", None)
+                curr = driver.toggle_lane_assist(en)
+                return jsonify({"status": "success", "enabled": curr})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/traffic_rules/status", methods=["GET"])
+        def api_traffic_rules_status():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver:
+                st = driver.get_status().get("traffic_rules", {})
+                return jsonify({"status": "success", "traffic_rules": st})
+            return jsonify({"status": "unavailable", "message": "Autonomous driver not active"}), 200
+
+        @self.app.route("/api/traffic_rules/toggle", methods=["POST"])
+        def api_traffic_rules_toggle():
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and hasattr(driver, "toggle_traffic_rules"):
+                data = request.json or {}
+                en = data.get("enabled", None)
+                curr = driver.toggle_traffic_rules(en)
+                return jsonify({"status": "success", "enabled": curr})
+            return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+
+        @self.app.route("/api/pilot/recording", methods=["GET", "POST"])
+        def api_pilot_recording():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver or not hasattr(driver, "start_recording"):
+                return jsonify({"status": "error", "message": "Behavioral-cloning driver not active"}), 503
+            if request.method == "POST":
+                enabled = bool((request.get_json(silent=True) or {}).get("enabled", False))
+                status = driver.start_recording() if enabled else driver.stop_recording()
+                return jsonify({"status": "success", **status})
+            return jsonify({"status": "success", **driver.get_recording_status()})
+
+        @self.app.route("/api/pilot/model", methods=["GET"])
+        def api_pilot_model():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver or not hasattr(driver, "model"):
+                return jsonify({"status": "error", "message": "Behavioral-cloning driver not active"}), 503
+            return jsonify({
+                "status": "success",
+                "path": driver.model.model_path,
+                "loaded": driver.model.loaded,
+                "error": driver.model.error,
+            })
+
+        @self.app.route("/api/auto/destinations", methods=["GET", "POST", "DELETE"])
+        def api_auto_destinations():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver:
+                return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+            if request.method == "DELETE":
+                driver.clear_destinations()
+                return jsonify({"status": "success", "destinations": driver.get_destinations()})
+            if request.method == "POST":
+                data = request.get_json(silent=True) or {}
+                try:
+                    x = float(data["x"])
+                    y = float(data["y"])
+                    label = str(data.get("label", "")).strip()
+                    if not all(math.isfinite(value) for value in (x, y)):
+                        raise ValueError("coordinates must be finite")
+                    if abs(x) > 100000 or abs(y) > 100000:
+                        raise ValueError("coordinates are outside the supported range")
+                except (KeyError, TypeError, ValueError) as exc:
+                    return jsonify({"status": "error", "message": str(exc)}), 400
+                waypoint = driver.add_destination(x, y, label)
+                # Queueing a point must not start the motors unexpectedly.
+                # The operator explicitly selects AI mode after all points
+                # have been entered and the vehicle is physically safe.
+                return jsonify({"status": "success", "destination": waypoint,
+                                "destinations": driver.get_destinations(),
+                                "control_mode": self.control_mode,
+                                "autonomous_enabled": bool(driver.is_enabled)}), 201
+            return jsonify({"status": "success", "destinations": driver.get_destinations()})
+
+        @self.app.route("/api/marker/status", methods=["GET"])
+        def api_marker_status():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver or not hasattr(driver, "get_marker_status"):
+                return jsonify({"status": "unavailable", "message": "Marker navigation unavailable"}), 503
+            return jsonify({"status": "success", "marker_route": driver.get_marker_status()})
+
+        @self.app.route("/api/marker/route", methods=["POST", "DELETE"])
+        def api_marker_route():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver or not hasattr(driver, "configure_marker_route"):
+                return jsonify({"status": "unavailable", "message": "Marker navigation unavailable"}), 503
+            if request.method == "DELETE":
+                result = driver.clear_marker_route()
+                self.control_mode = "manual"
+                with self._lock:
+                    self._telem["autonomous_enabled"] = False
+                    self._telem["control_mode"] = "manual"
+                return jsonify({"status": "success", "marker_route": result, "control_mode": "manual"})
+
+            data = request.get_json(silent=True) or {}
+            raw_ids = data.get("marker_ids", data.get("route", []))
+            if not isinstance(raw_ids, list) or not raw_ids:
+                return jsonify({"status": "error", "message": "marker_ids must be a non-empty list"}), 400
+            try:
+                marker_ids = [int(value) for value in raw_ids]
+                enabled = bool(data.get("enabled", True))
+                result = driver.configure_marker_route(marker_ids, enabled=enabled)
+            except (TypeError, ValueError) as exc:
+                return jsonify({"status": "error", "message": str(exc)}), 400
+            mode = "ai" if enabled else "manual"
+            self.control_mode = mode
+            with self._lock:
+                self._telem["autonomous_enabled"] = enabled
+                self._telem["control_mode"] = mode
+            return jsonify({"status": "success", "marker_route": result, "control_mode": mode}), 201
+
+        @self.app.route("/api/auto/target_pin", methods=["POST", "DELETE"])
+        def api_auto_target_pin():
+            driver = getattr(self, "autonomous_driver", None)
+            if request.method == "DELETE":
+                if driver and hasattr(driver, "clear_target_pin"):
+                    driver.clear_target_pin()
+                with self._lock:
+                    self._telem["target_pin"] = None
+                return jsonify({"status": "success", "target_pin": None})
+
+            data = request.get_json(silent=True) or {}
+            x = int(data.get("x", 320))
+            y = int(data.get("y", 240))
+            if driver and hasattr(driver, "set_target_pin"):
+                res = driver.set_target_pin(x, y)
+                self.control_mode = "ai"
+                with self._lock:
+                    self._telem["target_pin"] = res
+                    self._telem["autonomous_enabled"] = True
+                    self._telem["control_mode"] = "ai"
+                return jsonify({"status": "success", "target_pin": res, "control_mode": "ai"})
+
+            # Standby pin storage
+            bearing = round((((x - 320) / 320) * 31.1), 1)
+            pin_info = {"x": x, "y": y, "bearing_deg": bearing}
+            with self._lock:
+                self._telem["target_pin"] = pin_info
+            return jsonify({"status": "success", "target_pin": pin_info})
+
+        @self.app.route("/api/auto/target_3d", methods=["POST"])
+        def api_auto_target_3d():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver:
+                return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+            data = request.get_json(silent=True) or {}
+            try:
+                wx = float(data.get("x", data.get("world_x", 0.0)))
+                wy = float(data.get("y", data.get("world_y", 0.0)))
+                label = str(data.get("label", "3D Target")).strip()
+                if not (math.isfinite(wx) and math.isfinite(wy)):
+                    raise ValueError("Coordinates must be finite")
+            except (TypeError, ValueError) as exc:
+                return jsonify({"status": "error", "message": str(exc)}), 400
+
+            # The behavioral-cloning pilot uses the spatial map as an ordered
+            # route planner. Clicking the map queues a point and deliberately
+            # does not start the motors; the operator enables AI explicitly.
+            if hasattr(driver, "add_destination") and hasattr(driver, "get_destinations"):
+                route = driver.get_destinations()
+                next_number = len(route.get("waypoints", [])) + 1
+                waypoint = driver.add_destination(wx, wy, label or f"Point {next_number}")
+                return jsonify({
+                    "status": "success",
+                    "destination": waypoint,
+                    "destinations": driver.get_destinations(),
+                    "control_mode": self.control_mode,
+                    "autonomous_enabled": bool(driver.is_enabled),
+                })
+
+            res = driver.set_target_3d(wx, wy)
+            self.control_mode = "ai"
+            with self._lock:
+                self._telem["target_pin"] = res
+                self._telem["autonomous_enabled"] = True
+                self._telem["control_mode"] = "ai"
+            return jsonify({"status": "success", "target_pin": res, "control_mode": "ai"})
+
+        @self.app.route("/api/auto/gaze_tracking", methods=["POST"])
+        def api_auto_gaze_tracking():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver:
+                return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+            data = request.get_json(silent=True) or {}
+            enabled = bool(data.get("enabled", not driver.active_gaze_tracking))
+            res = driver.set_gaze_tracking(enabled)
+            return jsonify({"status": "success", "active_gaze_tracking": res})
+
+        @self.app.route("/api/auto/pose", methods=["POST"])
+        def api_auto_pose():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver:
+                return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+            data = request.get_json(silent=True) or {}
+            try:
+                values = [float(data.get(key, default)) for key, default in (
+                    ("x", 0.0), ("y", 0.0), ("heading_deg", 90.0)
+                )]
+                if not all(math.isfinite(value) for value in values):
+                    raise ValueError("pose values must be finite")
+            except (TypeError, ValueError) as exc:
+                return jsonify({"status": "error", "message": str(exc)}), 400
+            driver.reset_pose(*values)
+            return jsonify({"status": "success", "destinations": driver.get_destinations()})
+
+        @self.app.route("/api/auto/target_gps", methods=["POST"])
+        def api_auto_target_gps():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver:
+                return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+            data = request.get_json(silent=True) or {}
+            try:
+                lat = float(data.get("latitude", data.get("lat", 0.0)))
+                lon = float(data.get("longitude", data.get("lon", 0.0)))
+                label = str(data.get("label", "GPS Target")).strip()
+                if not (math.isfinite(lat) and math.isfinite(lon)):
+                    raise ValueError("Latitude and Longitude must be finite numbers")
+            except (TypeError, ValueError) as exc:
+                return jsonify({"status": "error", "message": str(exc)}), 400
+
+            res = driver.set_target_gps(lat, lon, label=label)
+            self.control_mode = "ai"
+            with self._lock:
+                self._telem["target_pin"] = res
+                self._telem["autonomous_enabled"] = True
+                self._telem["control_mode"] = "ai"
+            return jsonify({"status": "success", "target_pin": res, "gps": driver.get_current_gps(), "control_mode": "ai"})
+
+        @self.app.route("/api/auto/gps_origin", methods=["GET", "POST"])
+        def api_auto_gps_origin():
+            driver = getattr(self, "autonomous_driver", None)
+            if not driver:
+                return jsonify({"status": "error", "message": "Autonomous driver not active"}), 503
+            if request.method == "POST":
+                data = request.get_json(silent=True) or {}
+                try:
+                    lat = float(data.get("latitude", data.get("lat", 0.0)))
+                    lon = float(data.get("longitude", data.get("lon", 0.0)))
+                    if not (math.isfinite(lat) and math.isfinite(lon)):
+                        raise ValueError("Latitude and Longitude must be finite numbers")
+                except (TypeError, ValueError) as exc:
+                    return jsonify({"status": "error", "message": str(exc)}), 400
+                res = driver.set_gps_origin(lat, lon)
+                return jsonify({"status": "success", "origin": res, "gps": driver.get_current_gps()})
+            return jsonify({"status": "success", "gps": driver.get_current_gps()})
+
         # ---- SERVO ---------------------------------------------------
         @self.app.route("/api/servo", methods=["POST"])
         def api_servo():
             data  = request.json or {}
-            angle = float(data.get("angle", 90.0))
-            self.servo.set_angle(angle)
+            raw_angle = float(data.get("angle", 90.0))
+            # Safe clamping within physical limits (25° - 155°) to prevent mechanical stall & heat
+            min_a = getattr(self.servo, "MIN_ANGLE", 25.0)
+            max_a = getattr(self.servo, "MAX_ANGLE", 155.0)
+            angle = max(min_a, min(max_a, raw_angle))
+            if hasattr(self.servo, "set_angle"):
+                self.servo.set_angle(angle, auto_relax=True)
             with self._lock:
                 self._telem["servo_angle"] = round(angle, 1)
-            return jsonify({"status": "success", "angle": angle})
+
+            pin_info = None
+            driver = getattr(self, "autonomous_driver", None)
+            if driver and hasattr(driver, "get_current_reprojected_pin"):
+                pin_info = driver.get_current_reprojected_pin(servo_angle=angle)
+                with self._lock:
+                    self._telem["target_pin"] = pin_info
+
+            return jsonify({"status": "success", "angle": angle, "target_pin": pin_info})
+
+        @self.app.route("/api/servo/relax", methods=["POST"])
+        def api_servo_relax():
+            if hasattr(self, "servo") and self.servo:
+                if hasattr(self.servo, "relax"):
+                    self.servo.relax()
+                elif hasattr(self.servo, "_relax_pwm"):
+                    self.servo._relax_pwm()
+                return jsonify({"status": "success", "message": "Servo relaxed (PWM 0%)"})
+            return jsonify({"status": "error", "message": "Servo not available"}), 503
 
         @self.app.route("/api/servo/trim", methods=["GET", "POST"])
         def api_servo_trim():
@@ -284,11 +722,97 @@ class DashboardServer:
         @self.app.route("/api/motor/<cmd>", methods=["POST"])
         def api_motor_cmd(cmd: str):
             cmd = cmd.lower()
-            if   cmd == "forward":  self.motors.forward();  status = "FORWARD"
-            elif cmd == "backward": self.motors.backward(); status = "REVERSE"
-            elif cmd == "left":     self.motors.left();     status = "TURN-LEFT"
-            elif cmd == "right":    self.motors.right();    status = "TURN-RIGHT"
-            else:                   self.motors.stop();     status = "STOPPED"
+            # A keypad command is an explicit operator takeover.  This also
+            # applies to STOP; otherwise the autonomous loop can immediately
+            # start driving again after the operator presses the stop key.
+            self._take_manual_control()
+            if cmd in ("forward", "w", "up", "fwd_left", "wa", "fwd_right", "wd"):
+                if hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                    with self.autonomous_driver._lock:
+                        front_dist = getattr(self.autonomous_driver, "_front_distance_cm", None)
+                        if front_dist is not None and front_dist <= 18.0:
+                            self.motors.stop()
+                            if front_dist <= 12.0:
+                                self.motors.drive(throttle=-0.50, steering=0.0)
+                                time.sleep(0.4)
+                                self.motors.stop()
+                            status = f"SUDDEN STOPPED (OBSTACLE {front_dist:.1f}cm)"
+                            with self._lock:
+                                self._telem["status"] = status
+                            return jsonify({
+                                "status": "blocked",
+                                "message": f"COLLISION GUARD: Obstacle ahead at {front_dist:.1f} cm! Forward motion blocked.",
+                                "hazard": True,
+                                "motor_state": status
+                            }), 403
+                        if getattr(self.autonomous_driver, "_is_blind", False):
+                            self.motors.stop()
+                            status = "SUDDEN STOPPED (DARK/BLANK)"
+                            with self._lock:
+                                self._telem["status"] = status
+                            return jsonify({
+                                "status": "blocked",
+                                "message": f"SUDDEN STOP: Camera blind ({self.autonomous_driver._blind_reason})",
+                                "hazard": True,
+                                "motor_state": status
+                            }), 403
+                        if len(self.autonomous_driver._current_detections) > 0:
+                            obj = self.autonomous_driver._current_detections[0]
+                            self.motors.stop()
+                            status = "SUDDEN STOPPED (OBSTACLE)"
+                            with self._lock:
+                                self._telem["status"] = status
+                            return jsonify({
+                                "status": "blocked",
+                                "message": f"SUDDEN STOP: {obj.class_name.upper()} ({int(obj.confidence*100)}%) detected in camera feed!",
+                                "hazard": True,
+                                "motor_state": status
+                            }), 403
+
+            if   cmd in ("forward", "w", "up"):          self.motors.forward();  status = "FORWARD"
+            elif cmd in ("backward", "s", "down", "rev"): self.motors.backward(); status = "REVERSE"
+            elif cmd in ("left", "a"):                   self.motors.left();     status = "TURN-LEFT"
+            elif cmd in ("right", "d"):                  self.motors.right();    status = "TURN-RIGHT"
+            elif cmd in ("fwd_left", "wa"):              status = self.motors.drive(1.0, -0.8)
+            elif cmd in ("fwd_right", "wd"):             status = self.motors.drive(1.0, 0.8)
+            elif cmd in ("rev_left", "sa"):              status = self.motors.drive(-1.0, -0.8)
+            elif cmd in ("rev_right", "sd"):             status = self.motors.drive(-1.0, 0.8)
+            else:                                        self.motors.stop();     status = "STOPPED"
+
+            # DeepPiCar-style collection also supports the keyboard/D-pad
+            # endpoints, not only the analog joystick heartbeat.
+            if self.autonomous_driver and hasattr(self.autonomous_driver, "record_sample"):
+                label_map = {
+                    "forward": (0.0, 1.0), "w": (0.0, 1.0), "up": (0.0, 1.0),
+                    "backward": (0.0, -1.0), "s": (0.0, -1.0), "down": (0.0, -1.0), "rev": (0.0, -1.0),
+                    "left": (-1.0, 0.0), "a": (-1.0, 0.0),
+                    "right": (1.0, 0.0), "d": (1.0, 0.0),
+                    "fwd_left": (-0.8, 1.0), "wa": (-0.8, 1.0),
+                    "fwd_right": (0.8, 1.0), "wd": (0.8, 1.0),
+                    "rev_left": (-0.8, -1.0), "sa": (-0.8, -1.0),
+                    "rev_right": (0.8, -1.0), "sd": (0.8, -1.0),
+                }
+                steering, throttle = label_map.get(cmd, (0.0, 0.0))
+                self.autonomous_driver.record_sample(steering=steering, throttle=throttle)
+
+            if (
+                hasattr(self, "autonomous_driver")
+                and self.autonomous_driver
+                and hasattr(self.autonomous_driver, "waypoint_nav")
+            ):
+                try:
+                    from control.serial_comm import VehicleCommand
+                except ImportError:
+                    from autonomous_car.control.serial_comm import VehicleCommand
+                cmd_map = {
+                    "forward": VehicleCommand.FORWARD, "w": VehicleCommand.FORWARD, "up": VehicleCommand.FORWARD,
+                    "backward": VehicleCommand.BACKWARD, "s": VehicleCommand.BACKWARD, "down": VehicleCommand.BACKWARD,
+                    "left": VehicleCommand.LEFT, "a": VehicleCommand.LEFT,
+                    "right": VehicleCommand.RIGHT, "d": VehicleCommand.RIGHT,
+                }
+                v_cmd = cmd_map.get(cmd, VehicleCommand.STOP)
+                self.autonomous_driver.waypoint_nav.odometry.update(v_cmd)
+
             with self._lock:
                 self._telem["status"] = status
             return jsonify({"status": "success", "command": cmd, "motor_state": status})
@@ -319,22 +843,136 @@ class DashboardServer:
 
         @self.app.route("/api/motor/test/<action>", methods=["POST"])
         def api_motor_test(action: str):
-            self.motors.test_pulse(action, duration=1.2)
-            return jsonify({"status": "testing", "action": action})
+            self._take_manual_control()
+            action = action.lower().strip()
+            if action not in ("left_fwd", "left_rev", "right_fwd", "right_rev"):
+                return jsonify({"status": "error", "message": "Unknown diagnostic action"}), 400
+            try:
+                data = request.json or {}
+                duration = max(0.1, min(1.5, float(data.get("duration", 0.8))))
+                speed = max(0.0, min(100.0, float(data.get("speed", 70.0))))
+                diagnostic = self.motors.get_diagnostic(action, speed)
+                self.motors.test_pulse(action, duration=duration, speed=speed)
+            except (TypeError, ValueError) as exc:
+                return jsonify({"status": "error", "message": str(exc)}), 400
+            with self._lock:
+                self._telem["status"] = "DIAGNOSTIC: " + action.upper()
+            return jsonify({
+                "status": "testing",
+                "duration": duration,
+                "diagnostic": diagnostic,
+                "message": "Only the selected motor-driver side is powered; vehicle must be raised safely.",
+            })
 
         # ---- PROPORTIONAL JOYSTICK -----------------------------------
         @self.app.route("/api/joystick", methods=["POST"])
         def api_joystick():
             data = request.json or {}
-            x = float(data.get("x", 0.0))
-            y = float(data.get("y", 0.0))
+            try:
+                x = max(-1.0, min(1.0, float(data.get("x", 0.0))))
+                y = max(-1.0, min(1.0, float(data.get("y", 0.0))))
+            except (TypeError, ValueError):
+                return jsonify({"status": "error", "message": "Joystick x/y must be numbers"}), 400
+            # A joystick heartbeat is also a takeover signal.  Sending the
+            # neutral vector therefore stops and disarms AI deterministically.
+            self._take_manual_control()
             with self._lock:
                 self._telem["x"] = round(x, 2)
                 self._telem["y"] = round(y, 2)
+
+            # Safety check: block forward motion if blind or obstacle present
+            if y > 0.05 and hasattr(self, "autonomous_driver") and self.autonomous_driver:
+                with self.autonomous_driver._lock:
+                    front_dist = getattr(self.autonomous_driver, "_front_distance_cm", None)
+                    if front_dist is not None and front_dist <= 18.0:
+                        self.motors.stop()
+                        if front_dist <= 12.0:
+                            self.motors.drive(throttle=-0.50, steering=0.0)
+                            time.sleep(0.4)
+                            self.motors.stop()
+                        status = f"SUDDEN STOPPED (OBSTACLE {front_dist:.1f}cm)"
+                        with self._lock:
+                            self._telem["status"] = status
+                        return jsonify({
+                            "status": "blocked",
+                            "message": f"COLLISION GUARD: Obstacle ahead at {front_dist:.1f} cm! Forward motion blocked.",
+                            "hazard": True,
+                            "motor_state": status
+                        }), 403
+                    if getattr(self.autonomous_driver, "_is_blind", False):
+                        self.motors.stop()
+                        status = "SUDDEN STOPPED (DARK/BLANK)"
+                        with self._lock:
+                            self._telem["status"] = status
+                        return jsonify({
+                            "status": "blocked",
+                            "message": f"SUDDEN STOP: Camera blind ({self.autonomous_driver._blind_reason})",
+                            "hazard": True,
+                            "motor_state": status
+                        }), 403
+                    if len(self.autonomous_driver._current_detections) > 0:
+                        obj = self.autonomous_driver._current_detections[0]
+                        self.motors.stop()
+                        status = "SUDDEN STOPPED (OBSTACLE)"
+                        with self._lock:
+                            self._telem["status"] = status
+                        return jsonify({
+                            "status": "blocked",
+                            "message": f"SUDDEN STOP: {obj.class_name.upper()} ({int(obj.confidence*100)}%) detected in camera feed!",
+                            "hazard": True,
+                            "motor_state": status
+                        }), 403
+
             status = self.motors.drive(throttle=y, steering=x)
+            if self.autonomous_driver and hasattr(self.autonomous_driver, "record_sample"):
+                self.autonomous_driver.record_sample(steering=x, throttle=y)
+
+            if (
+                hasattr(self, "autonomous_driver")
+                and self.autonomous_driver
+                and hasattr(self.autonomous_driver, "waypoint_nav")
+            ):
+                try:
+                    from control.serial_comm import VehicleCommand
+                except ImportError:
+                    from autonomous_car.control.serial_comm import VehicleCommand
+                if y > 0.15:
+                    self.autonomous_driver.waypoint_nav.odometry.update(VehicleCommand.FORWARD)
+                elif y < -0.15:
+                    self.autonomous_driver.waypoint_nav.odometry.update(VehicleCommand.BACKWARD)
+                elif x > 0.25:
+                    self.autonomous_driver.waypoint_nav.odometry.update(VehicleCommand.RIGHT)
+                elif x < -0.25:
+                    self.autonomous_driver.waypoint_nav.odometry.update(VehicleCommand.LEFT)
+
             with self._lock:
                 self._telem["status"] = status
             return jsonify({"status": "success", "motor_state": status})
+
+        @self.app.route("/api/control/mode", methods=["GET", "POST"])
+        def api_control_mode():
+            if request.method == "POST":
+                requested = str((request.json or {}).get("mode", "manual")).lower().strip()
+                if requested not in ("manual", "ai"):
+                    return jsonify({"status": "error", "message": "Mode must be manual or ai"}), 400
+                if requested == "manual":
+                    self._take_manual_control()
+                else:
+                    self.control_mode = "ai"
+                    if self.autonomous_driver:
+                        self.autonomous_driver.set_enabled(True)
+                    with self._lock:
+                        self._telem["control_mode"] = "ai"
+                        self._telem["autonomous_enabled"] = True
+                        self._telem["manual_override"] = False
+                        self._telem["status"] = "AI STARTING"
+            return jsonify({
+                "status": "success",
+                "control_mode": self.control_mode,
+                "autonomous_enabled": bool(
+                    self.autonomous_driver and self.autonomous_driver.is_enabled
+                ),
+            })
 
         # ---- PHOTO CAPTURE ------------------------------------------
         @self.app.route("/api/capture/photo", methods=["POST"])
@@ -930,16 +1568,13 @@ input[type=range]::-moz-range-thumb{
       <!-- Interactive Alignment Reticle & Heading Guidelines -->
       <div class="cam-align-overlay" id="cam-grid" style="display:none;">
         <svg class="grid-svg" viewBox="0 0 640 480" preserveAspectRatio="none">
-          <!-- Driving Corridor / Lane Perspective -->
-          <polygon points="140,480 270,240 370,240 500,480" fill="rgba(0,122,255,0.06)" stroke="rgba(0,122,255,0.3)" stroke-width="1.5" stroke-dasharray="5 5"/>
-          
-          <!-- Horizon Line (Pitch Level 0°) -->
-          <line x1="20" y1="240" x2="620" y2="240" stroke="rgba(52,199,89,0.75)" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <text x="30" y="234" fill="rgba(52,199,89,0.9)" font-size="10" font-weight="700">HORIZON 0°</text>
+          <!-- Full Camera Feed Active Frame (Zero Lane Grids) -->
+          <rect x="8" y="8" width="624" height="464" rx="8" fill="none" stroke="rgba(0,122,255,0.45)" stroke-width="1.5" stroke-dasharray="8 6"/>
+          <text x="20" y="28" fill="rgba(0,122,255,0.9)" font-size="10" font-weight="700">FULL CAMERA FEED SCANNER (640x480)</text>
 
           <!-- Vehicle Forward Centerline (Yaw Center 0°) -->
           <line x1="320" y1="20" x2="320" y2="460" stroke="rgba(255,59,48,0.75)" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <text x="326" y="36" fill="rgba(255,59,48,0.9)" font-size="10" font-weight="700">CENTERLINE</text>
+          <text x="326" y="44" fill="rgba(255,59,48,0.9)" font-size="10" font-weight="700">CENTERLINE</text>
 
           <!-- Center Crosshair Reticle -->
           <circle cx="320" cy="240" r="32" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
@@ -955,7 +1590,7 @@ input[type=range]::-moz-range-thumb{
         </svg>
         <div class="grid-badge">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="#34C759"><circle cx="12" cy="12" r="10"/></svg>
-          ALIGNMENT GRID ACTIVE &bull; VEHICLE CENTER
+          FULL CAMERA FEED &bull; SUDDEN STOP ACTIVE
         </div>
       </div>
 
@@ -1220,11 +1855,6 @@ function applyCamAlignmentUI(){
   var img = document.getElementById('cam');
   if (!img) return;
 
-  var sx = camAlignment.flip_h ? -1 : 1;
-  var sy = camAlignment.flip_v ? -1 : 1;
-  var r  = camAlignment.rotation || 0;
-  img.style.transform = 'scale(' + sx + ',' + sy + ') rotate(' + r + 'deg)';
-
   if (camAlignment.fit_mode === 'cover') {
     img.classList.add('cover-mode');
   } else {
@@ -1364,55 +1994,44 @@ function updateTrimDisplay(offset){
 // Initial UI setup on page load
 applyCamAlignmentUI();
 
+// Query initial alignment from backend
+fetch('/api/camera/alignment')
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if (d && d.status === 'success') {
+      camAlignment.flip_h = !!d.flip_h;
+      camAlignment.flip_v = !!d.flip_v;
+      camAlignment.rotation = d.rotation || 0;
+      applyCamAlignmentUI();
+    }
+  }).catch(function(){});
+
 /* ── CAMERA STREAM ──────────────────────────────────── */
 (function(){
   var img = document.getElementById('cam');
   if (!img) return;
 
   var reconnectTimer = null;
-  var usePolling = false;
-  var pollBusy = false;
-  var loader = new Image();
+  var streamUrl = '/video_feed';
 
   function scheduleReconnect() {
-    if (reconnectTimer || usePolling) return;
+    if (reconnectTimer) return;
     reconnectTimer = setTimeout(function(){
       reconnectTimer = null;
-      img.src = '/video_feed?t=' + Date.now();
+      img.src = streamUrl + '?t=' + Date.now();
     }, 1200);
   }
 
   img.onerror = function() {
-    if (!usePolling) {
-      scheduleReconnect();
-    }
+    scheduleReconnect();
   };
 
-  var watchdog = setTimeout(function(){
-    if (!img.naturalWidth || img.naturalWidth === 0) {
-      usePolling = true;
-      startPolling();
+  // Re-establish stream if tab becomes active after being in background
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && img) {
+      img.src = streamUrl + '?t=' + Date.now();
     }
-  }, 3000);
-
-  img.onload = function() {
-    clearTimeout(watchdog);
-  };
-
-  function startPolling() {
-    loader.onload = function() {
-      img.src = loader.src;
-      pollBusy = false;
-    };
-    loader.onerror = function() {
-      pollBusy = false;
-    };
-    setInterval(function(){
-      if (pollBusy) return;
-      pollBusy = true;
-      loader.src = '/api/frame?_=' + Date.now();
-    }, 50);
-  }
+  });
 }());
 
 /* ── SERVO ───────────────────────────────────────────── */
@@ -1606,7 +2225,7 @@ function motor(c){
 
   /* ── KEYBOARD WASD & ARROW CONTROLS ───────────────── */
   var keys = { w: false, a: false, s: false, d: false };
-  var usingKey = false;
+  var keyHoldInterval = null;
 
   function updateKeyDrive() {
     var dy = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
@@ -1625,23 +2244,54 @@ function motor(c){
     if (pid !== null) return; // Touch/mouse pointer has priority if active
 
     if (dx === 0 && dy === 0) {
-      if (usingKey) {
-        usingKey = false;
-        tx = CX;
-        ty = CY;
-        la = 0; // force immediate dispatch in frame()
+      if (keyHoldInterval) {
+        clearInterval(keyHoldInterval);
+        keyHoldInterval = null;
       }
+      // Instant snap to center and immediate stop command
+      tx = CX; ty = CY; kx = CX; ky = CY;
+      nx = 0; ny = 0;
+      draw();
+      fetch('/api/motor/stop', {method: 'POST'})
+        .then(function(res){ return res.json(); })
+        .then(function(d){ setStatus(d.motor_state || 'STOPPED'); })
+        .catch(function(){});
       return;
     }
 
-    usingKey = true;
     var dist = Math.hypot(dx, dy);
     var targetX = (dx / dist) * MAX;
     var targetY = -(dy / dist) * MAX; // Screen Y is inverted relative to vehicle throttle
 
     tx = CX + targetX;
     ty = CY + targetY;
-    la = 0; // force immediate dispatch in frame()
+    kx = tx;
+    ky = ty;
+    nx = Number((dx / dist).toFixed(2));
+    ny = Number((dy / dist).toFixed(2));
+    draw();
+
+    function dispatchKeyJoy() {
+      fetch('/api/joystick', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({x: nx, y: ny})
+      })
+      .then(function(res){ return res.json(); })
+      .then(function(d){ setStatus(d.motor_state); })
+      .catch(function(){});
+    }
+
+    dispatchKeyJoy();
+    if (keyHoldInterval) clearInterval(keyHoldInterval);
+    keyHoldInterval = setInterval(function() {
+      if (keys.w || keys.a || keys.s || keys.d) {
+        dispatchKeyJoy();
+      } else {
+        clearInterval(keyHoldInterval);
+        keyHoldInterval = null;
+      }
+    }, 80);
   }
 
   window.addEventListener('keydown', function(e) {
@@ -1657,16 +2307,19 @@ function motor(c){
     else if (k === 'd' || e.key === 'ArrowRight') { keys.d = true; matched = true; }
     else if (e.code === 'Space' || k === 'x') {
       keys.w = keys.a = keys.s = keys.d = false;
-      usingKey = false;
+      if (keyHoldInterval) { clearInterval(keyHoldInterval); keyHoldInterval = null; }
       tx = CX; ty = CY; kx = CX; ky = CY;
       nx = 0; ny = 0;
+      draw();
       var stp = document.getElementById('dpad-stop');
       if (stp) {
         stp.classList.add('active');
         setTimeout(function(){ stp.classList.remove('active'); }, 180);
       }
-      sendJoy();
-      rel();
+      fetch('/api/motor/stop', {method: 'POST'})
+        .then(function(res){ return res.json(); })
+        .then(function(d){ setStatus(d.motor_state || 'STOPPED'); })
+        .catch(function(){});
       matched = true;
     }
     else if (k === 'q') {
@@ -1897,3 +2550,39 @@ setInterval(loadGallery,15000);
 </body>
 </html>
 """
+
+if __name__ == "__main__":
+    from config import config
+    from hardware.motors import MotorController
+    from hardware.servo import ServoController
+    from vision.camera import Camera
+    from behavioral_cloning import BehavioralCloningDriver
+
+    m_cfg = config.motor
+    motors = MotorController(
+        in1_pin=m_cfg.in1_pin,
+        in2_pin=m_cfg.in2_pin,
+        in3_pin=m_cfg.in3_pin,
+        in4_pin=m_cfg.in4_pin,
+        in2_alt_pin=m_cfg.in2_alt_pin,
+    )
+    servo = ServoController(servo_pin=12)
+    servo.center()
+    camera = Camera(width=640, height=480)
+    camera.start()
+
+    auto_driver = BehavioralCloningDriver(
+        config=config.behavioral_cloning,
+        motors=motors,
+        camera=camera,
+    )
+    auto_driver.start()
+
+    server = DashboardServer(
+        config=config.dashboard,
+        motor_controller=motors,
+        servo_controller=servo,
+        camera=camera,
+        autonomous_driver=auto_driver,
+    )
+    server.start()

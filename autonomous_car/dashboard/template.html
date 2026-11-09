@@ -3,577 +3,1392 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>RC Car</title>
+<title>RC Car GCS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ─────────────────────────────────────────────────────────────
-   RESET
+   RC CAR GCS — "FIELD INSTRUMENT" DESIGN SYSTEM
+   Flat graphite panels, hairline rules, one signal accent (lime).
+   Colour is reserved for state: lime = active, green = ok,
+   amber = caution, red = danger / stop.
 ───────────────────────────────────────────────────────────── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;
-  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;}
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  --bg-deep        : #0E0F0D;
+  --bg-base        : #131412;
+  --bg-surface     : #1A1C19;
+  --bg-card        : #171815;
+  --bg-card-hover  : #1D1F1B;
+  --bg-input       : #20231F;
+  --border         : #2C2F2A;
+  --border-subtle  : #222420;
+  --border-focus   : rgba(198, 241, 53, 0.6);
+  --text-primary   : #ECEFE6;
+  --text-secondary : #9BA194;
+  --text-muted     : #666B60;
+  --accent-cyan    : #C6F135;   /* legacy token name: now the signal lime */
+  --accent-green   : #4ADE80;
+  --accent-amber   : #F5A524;
+  --accent-red     : #FF4D3D;
+  --accent-purple  : #B79CFF;
+  --r-sm           : 4px;
+  --r-md           : 6px;
+  --r-lg           : 10px;
+  --font-sans      : 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono      : 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: 100vh;
+  touch-action: pan-y;
+  overflow-x: hidden;
+}
+
+button { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
 
 /* ─────────────────────────────────────────────────────────────
-   TOKENS — Apple monochrome system
+   PANELS
 ───────────────────────────────────────────────────────────── */
-:root{
-  --bg      : #F2F2F7;
-  --s1      : #FFFFFF;
-  --s2      : #F9F9FB;
-  --card    : #FFFFFF;
-  --card2   : #F8F8FA;
-  --bdr     : #E5E5EA;
-  --bdr2    : #D1D1D6;
-  --txt     : #1C1C1E;
-  --txt2    : #636366;
-  --txt3    : #8E8E93;
-  --red     : #FF3B30;   /* Apple red    */
-  --grn     : #34C759;   /* Apple green  */
-  --blu     : #007AFF;   /* Apple blue   */
-  --r       : 20px;
-  --rf      : -apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+.card {
+  background: var(--bg-card);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.card:hover { border-color: #3A3E37; }
+
+.tab-hidden { display: none !important; }
+
+/* Section label: small caps with a square marker */
+.lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lbl-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--accent-cyan);
+  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────────────────────────
-   BASE
+   HEADER — brand, link status, master E-STOP
 ───────────────────────────────────────────────────────────── */
-html,body{height:100%;overscroll-behavior:none;}
-body{
-  background:var(--bg);
-  color:var(--txt);
-  font-family:var(--rf);
-  min-height:100vh;
-  touch-action:pan-y;
-  overflow-x:hidden;
-  /* Apple dot-grid pattern */
-  background-image:
-    radial-gradient(circle,rgba(0,0,0,.065) 1px,transparent 1px);
-  background-size:28px 28px;
-  background-attachment:fixed;
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.app-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--accent-cyan);
+  color: #10120A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.app-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-badge-callsign {
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+.app-sub {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.topbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* Status chips: flat, rectangular, monospaced readouts */
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  transition: border-color 0.15s, color 0.15s;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* Master E-STOP: the loudest object on the page, on purpose */
+.top-estop-btn {
+  order: 99;
+  background: var(--accent-red);
+  border: 0;
+  border-radius: var(--r-sm);
+  color: #1A0402;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.08s, background 0.15s;
+}
+.top-estop-btn:hover { background: #FF6656; }
+.top-estop-btn:active, .top-estop-btn.flashing {
+  transform: scale(0.96);
+  background: #FFFFFF;
+  color: var(--accent-red);
 }
 
 /* ─────────────────────────────────────────────────────────────
-   FROSTED CARD
+   WORKSPACE TABS — underline style, pinned under the header
 ───────────────────────────────────────────────────────────── */
-.card{
-  background:var(--card);
-  border-radius:var(--r);
-  border:1px solid var(--bdr);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  position:relative;overflow:hidden;
+.tabs-nav {
+  position: sticky;
+  top: 57px;
+  z-index: 40;
+  padding: 0 20px;
+  margin: 0 0 18px;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
 }
-.card::before{
-  content:'';position:absolute;inset:0;border-radius:var(--r);
-  background:linear-gradient(145deg,rgba(255,255,255,.9) 0%,transparent 50%);
-  pointer-events:none;
-}
+.tabs-nav::-webkit-scrollbar { display: none; }
 
-/* Section label */
-.lbl{
-  font-size:10px;font-weight:700;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--txt2);
-  display:flex;align-items:center;gap:6px;
+.tab-btn {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 11px 14px;
+  margin-bottom: -1px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: color 0.15s, border-color 0.15s;
 }
-.lbl-dot{width:5px;height:5px;border-radius:50%;background:var(--txt2);flex-shrink:0;}
-
-/* ─────────────────────────────────────────────────────────────
-   STATUS BAR (top)
-───────────────────────────────────────────────────────────── */
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px 10px;
-  max-width:1240px;margin:0 auto;
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
 }
-.topbar-left{display:flex;align-items:center;gap:10px;}
-.app-icon{
-  width:32px;height:32px;border-radius:8px;
-  background:#1C1C1E;color:#fff;display:flex;align-items:center;justify-content:center;
-  font-size:.9rem;flex-shrink:0;
-}
-.app-name{font-size:1rem;font-weight:700;letter-spacing:-.02em;color:#1C1C1E;}
-.app-sub{font-size:10px;color:var(--txt2);margin-top:1px;font-weight:500;}
-.live-pill{
-  display:flex;align-items:center;gap:5px;
-  background:rgba(52,199,89,.12);border:1px solid rgba(52,199,89,.3);
-  border-radius:20px;padding:5px 10px;
-  font-size:10px;font-weight:700;letter-spacing:.06em;color:#1E7E34;
-}
-.live-dot{width:6px;height:6px;border-radius:50%;
-  background:var(--grn);box-shadow:0 0 6px var(--grn);animation:blink 2s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 
 /* ─────────────────────────────────────────────────────────────
-   DESKTOP GRID (BALANCED, ALIGNED COLUMNS)
+   DESKTOP GRID — camera is the primary surface
 ───────────────────────────────────────────────────────────── */
-.layout{
-  display:grid;
-  grid-template-columns:1.35fr 1fr;
-  grid-template-rows:auto auto auto;
-  gap:16px;
-  padding:0 16px 28px;
-  max-width:1240px;margin:0 auto;
-  align-items:stretch;
+.layout {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 16px;
+  padding: 0 20px 36px;
+  max-width: 1500px;
+  margin: 0 auto;
+  align-items: stretch;
 }
-.a-cam   {grid-column:1;grid-row:1/3;padding:16px;display:flex;flex-direction:column;min-height:0;}
-.a-stat  {grid-column:2;grid-row:1;padding:16px;}
-.a-servo {grid-column:2;grid-row:2;padding:16px;}
-.a-auto  {grid-column:1/-1;grid-row:3;}
-.a-ctrl  {grid-column:1/-1;grid-row:4;}
+.a-cam   { grid-column: 1; grid-row: 1; padding: 16px; display: flex; flex-direction: column; min-height: 0; }
+.a-map   { grid-column: 2; grid-row: 1; padding: 16px; display: flex; flex-direction: column; min-height: 0; }
+.a-stat  { grid-column: 1; grid-row: 2; padding: 16px; }
+.a-servo { grid-column: 2; grid-row: 2; padding: 16px; }
+.a-auto  { grid-column: 1 / -1; grid-row: 3; padding: 16px; }
+.a-ctrl  { grid-column: 1 / -1; grid-row: 4; padding: 16px; }
 
-/* ─────────────────────────────────────────────────────────────
-   MOBILE OVERRIDES (EXACT ORDER: CAM -> AUTO -> JOYSTICK -> ACTIONS)
-───────────────────────────────────────────────────────────── */
-@media(max-width:680px){
-  .layout{
+@media(max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .a-cam, .a-map, .a-stat, .a-servo, .a-auto, .a-ctrl { grid-column: 1; }
+  .tabs-nav { top: 105px; }
+}
+
+@media(max-width: 680px) {
+  .topbar { padding: 8px 14px; position: static; }
+  .tabs-nav { padding: 0 8px; top: 0; position: static; }
+  .layout {
     display: flex;
     flex-direction: column;
-    padding: 0 12px 32px;
+    padding: 0 12px 28px;
     gap: 12px;
   }
   .a-cam       { order: 1; padding: 12px; }
-  .a-auto      { order: 2; padding: 12px; }
-  .a-ctrl      { order: 3; }
+  .a-map       { order: 2; padding: 12px; }
+  .a-auto      { order: 3; padding: 12px; }
+  .a-ctrl      { order: 4; }
   .a-stat      { display: none !important; }
   .a-servo     { display: none !important; }
-  .mobile-dock { order: 4; display: flex; }
+  .mobile-dock { order: 5; display: flex; }
+  .desktop-only, .dpad-section, .gallery-wrap { display: none !important; }
+}
 
-  /* REMOVE D-PAD AND GALLERY SECTIONS COMPLETELY ON MOBILE VIEW */
-  .desktop-only, .dpad-section, .gallery-wrap {
-    display: none !important;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   CAMERA & LIVE FIELD ALIGNMENT
+───────────────────────────────────────────────────────────── */
+.cam-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cam-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tool-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.14s;
+  font-family: var(--font-sans);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.tool-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.tool-btn.active {
+  background: rgba(198, 241, 53, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(198, 241, 53, 0.45);
+  box-shadow: none;
+}
+
+.cam-frame {
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #04060A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  flex: 1;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+.cam-frame img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.18s ease-out;
+}
+.cam-frame img.cover-mode {
+  object-fit: cover;
+}
+
+/* Alignment HUD Overlay */
+.cam-align-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.grid-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.grid-badge {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(14, 15, 13, 0.9);
+
+  border: 1px solid rgba(198, 241, 53, 0.35);
+  color: var(--accent-cyan);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
+.cam-hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(14, 15, 13, 0.88));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 24px 14px 12px;
+  pointer-events: none;
+}
+.cam-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: rgba(255, 255, 255, 0.95);
+  font-family: var(--font-mono);
+  background: rgba(16, 23, 36, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.rec-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  box-shadow: none;
+  animation: blink 1s infinite;
+}
+.cam-res {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+/* Tap to Navigate Pin Reticle */
+.target-pin-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.pin-reticle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pin-radar {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--accent-cyan);
+  background: rgba(198, 241, 53, 0.2);
+  animation: pin-pulse 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+@keyframes pin-pulse {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.pin-center {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  border: 2px solid #FFFFFF;
+  box-shadow: none;
+}
+.pin-tag {
+  position: absolute;
+  bottom: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(14, 15, 13, 0.94);
+
+  color: #FFFFFF;
+  border: 1px solid rgba(198, 241, 53, 0.4);
+  padding: 3px 9px;
+  border-radius: 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.pin-clear-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 77, 61, 0.9);
+
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 10px rgba(255, 77, 61, 0.45);
+  z-index: 20;
+  transition: transform 0.12s, background 0.12s;
+}
+.pin-clear-btn:active {
+  transform: scale(0.94);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3D SPATIAL WORLD MAP CARD & ACTIVE VISION FRUSTUM
+───────────────────────────────────────────────────────────── */
+.map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.map-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.map-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: var(--r-sm);
+  background: rgba(198, 241, 53, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(198, 241, 53, 0.3);
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.spatial-canvas-wrap {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: #090D15;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 380px;
+  cursor: crosshair;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#spatial-map-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.map-hud-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+.map-hud-pill {
+  background: rgba(14, 15, 13, 0.88);
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px 10px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.map-hud-k {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+}
+.map-hud-v {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+}
+.map-hint-pill {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(14, 15, 13, 0.9);
+
+  border: 1px solid rgba(198, 241, 53, 0.25);
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-mono);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STATUS CARD (DESKTOP)
+───────────────────────────────────────────────────────────── */
+.st-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.st-ring {
+  position: relative;
+  width: 90px;
+  height: 90px;
+}
+.st-ring svg {
+  width: 90px;
+  height: 90px;
+  transform: rotate(-90deg);
+}
+.ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 6;
+}
+.ring-arc {
+  fill: none;
+  stroke: var(--accent-cyan);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 215;
+  stroke-dashoffset: 60;
+
+  transition: stroke 0.35s, stroke-dashoffset 0.4s;
+}
+.st-ico {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.4rem;
+  color: #FFFFFF;
+}
+.st-label {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+}
+.st-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.hud-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+.hud-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+}
+.hud-k {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 2px;
+  font-family: var(--font-mono);
+}
+.hud-v {
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SERVO CARD (DESKTOP)
+───────────────────────────────────────────────────────────── */
+.sv-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.sv-num {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+}
+.sv-num sup {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+}
+.sv-lbl {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 4px;
+}
+.sv-lbl b {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+}
+
+/* Sleek Cyber Range Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--accent-cyan) var(--pct, 50%), rgba(255, 255, 255, 0.1) var(--pct, 50%));
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 3px solid var(--accent-cyan);
+  box-shadow: none;
+  cursor: grab;
+  transition: transform 0.1s;
+}
+input[type=range]::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 3px solid var(--accent-cyan);
+  cursor: grab;
+}
+
+.sv-btns {
+  display: flex;
+  gap: 6px;
+}
+.sv-btn {
+  flex: 1;
+  height: 34px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.14s;
+}
+.sv-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.sv-btn:active {
+  background: rgba(198, 241, 53, 0.2);
+}
+.sv-btn-sec {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AUTONOMOUS DRIVING & AI PERCEPTION CARD
+───────────────────────────────────────────────────────────── */
+.a-auto {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auto-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.auto-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mode-pill, .server-pill {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-pill.active {
+  background: rgba(198, 241, 53, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(198, 241, 53, 0.45);
+  box-shadow: none;
+}
+.server-pill.connected {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: var(--accent-green);
+}
+
+.auto-toggle-btn {
+  background: var(--bg-surface);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  padding: 7px 16px;
+  font-size: 11.5px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s;
+}
+.auto-toggle-btn.engaged {
+  background: var(--accent-green);
+  color: #10120A;
+  border-color: #4ADE80;
+  box-shadow: none;
+}
+.toggle-switch-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.2s;
+}
+.auto-toggle-btn.engaged .toggle-switch-dot {
+  background: #10120A;
+  box-shadow: none;
+}
+
+/* Active Action Decision Banner */
+.auto-action-bar {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.auto-action-badge {
+  background: var(--bg-surface);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.auto-action-badge.stop    { background: var(--accent-red); box-shadow: none; }
+.auto-action-badge.forward { background: var(--accent-green); color: #10120A; box-shadow: none; }
+.auto-action-badge.avoid   { background: var(--accent-cyan); color: #10120A; box-shadow: none; }
+.auto-action-badge.slow    { background: var(--accent-amber); color: #10120A; box-shadow: none; }
+.auto-action-badge.scan    { background: var(--accent-purple); box-shadow: none; }
+
+.auto-action-reason {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 220px;
+}
+.auto-action-metrics {
+  display: flex;
+  gap: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.auto-badge-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+}
+
+/* Auto Grid Controls */
+.auto-grid-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.auto-ctrl-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.auto-k {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.mode-btn-group {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mode-btn {
+  flex: 1;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.mode-btn.active {
+  background: rgba(198, 241, 53, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(198, 241, 53, 0.45);
+}
+.clearance-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.clearance-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+.clearance-bar-wrap {
+  flex: 1;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.clearance-bar {
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 4px;
+  transition: width 0.2s, background 0.2s;
+}
+.server-input {
+  flex: 1;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: var(--bg-input);
+  color: #FFFFFF;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CONTROLS ROW (TACTILE COCKPIT)
+───────────────────────────────────────────────────────────── */
+.a-ctrl {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media(max-width: 680px) {
+  .a-ctrl {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
 
-/* ─────────────────────────────────────────────────────────────
-   CAMERA CARD & LIVE FIELD ALIGNMENT
-───────────────────────────────────────────────────────────── */
-.cam-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:12px;flex-wrap:wrap;gap:8px;
+/* D-PAD */
+.dpad-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.cam-tools{
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+.dpad-wrap {
+  display: flex;
+  justify-content: center;
 }
-.tool-btn{
-  background:#FFFFFF;border:1px solid #E5E5EA;border-radius:8px;
-  padding:5px 9px;font-size:11px;font-weight:600;color:var(--txt);
-  cursor:pointer;display:inline-flex;align-items:center;gap:4px;
-  transition:all .12s;font-family:var(--rf);box-shadow:0 1px 3px rgba(0,0,0,.03);
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-rows: repeat(3, 58px);
+  gap: 8px;
 }
-.tool-btn:hover{background:#F2F2F7;border-color:#D1D1D6;}
-.tool-btn.active{background:#1C1C1E;color:#FFFFFF;border-color:#1C1C1E;}
-.tool-btn svg{display:block;}
-
-.cam-frame{
-  border-radius:14px;overflow:hidden;
-  background:#050505;border:1px solid rgba(0,0,0,.08);
-  position:relative;flex:1;min-height:360px;
-  display:flex;align-items:center;justify-content:center;
+.d-btn {
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: #FFFFFF;
+  font-size: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.08s;
+  touch-action: manipulation;
+  font-family: var(--font-sans);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  line-height: 1;
 }
-.cam-frame img{
-  width:100%;height:100%;max-width:100%;max-height:100%;
-  object-fit:contain;display:block;
-  transition:transform .18s ease-out;
+.d-btn:hover {
+  border-color: rgba(198, 241, 53, 0.3);
 }
-.cam-frame img.cover-mode{
-  object-fit:cover;
+.d-btn:active, .d-btn.active {
+  background: rgba(198, 241, 53, 0.25);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  transform: scale(0.92);
+  box-shadow: none;
 }
-
-/* ── ALIGNMENT HUD OVERLAY ── */
-.cam-align-overlay{
-  position:absolute;inset:0;pointer-events:none;
+.d-stp {
+  background: rgba(255, 77, 61, 0.15);
+  border-color: rgba(255, 77, 61, 0.45);
+  color: var(--accent-red);
 }
-.grid-svg{
-  width:100%;height:100%;display:block;
+.d-stp:active, .d-stp.active {
+  background: var(--accent-red);
+  color: #FFFFFF;
+  transform: scale(0.92);
+  box-shadow: none;
 }
-.grid-badge{
-  position:absolute;top:10px;left:50%;transform:translateX(-50%);
-  background:rgba(28,28,30,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.18);color:#FFFFFF;
-  padding:3px 10px;border-radius:12px;font-size:9px;font-weight:700;
-  letter-spacing:.06em;display:flex;align-items:center;gap:5px;
-  box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap;
+.key-hint {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 3px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
 }
-
-.cam-hud{
-  position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(transparent,rgba(0,0,0,.75));
-  display:flex;align-items:flex-end;justify-content:space-between;
-  padding:20px 12px 10px;pointer-events:none;
-}
-.cam-badge{
-  display:flex;align-items:center;gap:5px;
-  font-size:10px;font-weight:700;letter-spacing:.07em;color:rgba(255,255,255,.9);
-}
-.rec-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1s infinite;}
-.cam-res{font-size:10px;color:rgba(255,255,255,.6);font-weight:600;}
-
-/* ─────────────────────────────────────────────────────────────
-   STATUS CARD (desktop only)
-───────────────────────────────────────────────────────────── */
-.st-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
-.st-ring{position:relative;width:80px;height:80px;}
-.st-ring svg{width:80px;height:80px;transform:rotate(-90deg);}
-.ring-bg{fill:none;stroke:rgba(0,0,0,.08);stroke-width:5;}
-.ring-arc{fill:none;stroke:#1C1C1E;stroke-width:5;stroke-linecap:round;
-  stroke-dasharray:215;stroke-dashoffset:60;
-  transition:stroke .35s,stroke-dashoffset .4s;}
-.st-ico{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  font-size:1.3rem;
-}
-.st-label{font-size:1rem;font-weight:700;letter-spacing:-.01em;}
-.st-sub{font-size:10px;color:var(--txt2);margin-top:1px;}
-.hud-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;}
-.hud-box{
-  background:#1C1C1E;border:1px solid #1C1C1E;
-  border-radius:10px;padding:7px 9px;color:#fff;
-}
-.hud-k{font-size:9px;text-transform:uppercase;letter-spacing:.1em;
-  color:rgba(255,255,255,.6);font-weight:700;margin-bottom:2px;}
-.hud-v{font-size:.85rem;font-weight:800;font-variant-numeric:tabular-nums;color:#fff;}
-
-/* ─────────────────────────────────────────────────────────────
-   SERVO CARD (desktop only)
-───────────────────────────────────────────────────────────── */
-.sv-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-.sv-num{font-size:2.2rem;font-weight:800;letter-spacing:-.04em;line-height:1;color:#1C1C1E;}
-.sv-num sup{font-size:.85rem;font-weight:500;color:var(--txt2);}
-.sv-lbl{font-size:10px;color:var(--txt2);font-weight:600;margin-top:3px;}
-input[type=range]{
-  -webkit-appearance:none;appearance:none;
-  width:100%;height:4px;border-radius:2px;
-  background:linear-gradient(to right,#1C1C1E var(--pct,50%),#E5E5EA var(--pct,50%));
-  outline:none;cursor:pointer;margin-bottom:10px;
-}
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
-  background:#fff;border:2px solid #1C1C1E;
-  box-shadow:0 2px 8px rgba(0,0,0,.2);
-  cursor:grab;transition:transform .1s;
-}
-input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2);}
-input[type=range]::-moz-range-thumb{
-  width:18px;height:18px;border-radius:50%;
-  background:#fff;border:2px solid #1C1C1E;cursor:grab;
-}
-.sv-btns{display:flex;gap:6px;}
-.sv-btn{
-  flex:1;height:32px;font-size:11px;font-weight:700;font-family:var(--rf);
-  background:#1C1C1E;color:#fff;
-  border:1px solid #1C1C1E;border-radius:8px;cursor:pointer;
-  transition:background .1s,opacity .1s;
-}
-.sv-btn:hover{background:#3A3A3C;}
-.sv-btn:active{background:#545456;}
-.sv-btn-sec{
-  background:#FFFFFF;color:var(--txt);border:1px solid #E5E5EA;
-}
-.sv-btn-sec:hover{background:#F2F2F7;}
-
-/* ─────────────────────────────────────────────────────────────
-   AUTONOMOUS DRIVING & EDGE AI CARD
-───────────────────────────────────────────────────────────── */
-.a-auto{
-  display:flex;flex-direction:column;gap:12px;padding:16px;
-}
-.auto-header{
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:10px;
-}
-.auto-header-badges{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-}
-.mode-pill, .server-pill{
-  background:#F2F2F7;border:1px solid #E5E5EA;border-radius:20px;
-  padding:4px 10px;font-size:10px;font-weight:700;color:var(--txt2);
-  letter-spacing:.05em;display:inline-flex;align-items:center;gap:5px;
-}
-.mode-pill.active{background:#1C1C1E;color:#FFFFFF;border-color:#1C1C1E;}
-.server-pill.connected{background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.3);color:var(--grn);}
-
-.auto-toggle-btn{
-  background:#1C1C1E;color:#FFFFFF;border:none;border-radius:20px;
-  padding:6px 14px;font-size:11px;font-weight:700;font-family:var(--rf);
-  cursor:pointer;display:inline-flex;align-items:center;gap:7px;
-  box-shadow:0 2px 8px rgba(0,0,0,.15);transition:all .15s;
-}
-.auto-toggle-btn.engaged{
-  background:var(--grn);box-shadow:0 0 12px rgba(52,199,89,.4);
-}
-.toggle-switch-dot{
-  width:8px;height:8px;border-radius:50%;background:#8E8E93;transition:background .2s;
-}
-.auto-toggle-btn.engaged .toggle-switch-dot{
-  background:#FFFFFF;box-shadow:0 0 6px #FFFFFF;
+.d-btn:active .key-hint, .d-btn.active .key-hint {
+  color: var(--accent-cyan);
 }
 
-.auto-action-bar{
-  background:var(--card2);border:1px solid var(--bdr);
-  border-radius:14px;padding:12px 14px;
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:10px;
+/* JOYSTICK SECTION */
+.joy-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
-.auto-action-badge{
-  background:#1C1C1E;color:#FFFFFF;font-size:12px;font-weight:800;
-  letter-spacing:.06em;padding:5px 12px;border-radius:8px;
-  text-transform:uppercase;white-space:nowrap;
+#jc {
+  display: block;
+  touch-action: none;
+  cursor: grab;
 }
-.auto-action-badge.stop{background:var(--red);box-shadow:0 0 10px rgba(255,59,48,.35);}
-.auto-action-badge.forward{background:var(--grn);}
-.auto-action-badge.avoid{background:var(--blu);}
-.auto-action-badge.slow{background:#FF9500;}
-.auto-action-badge.scan{background:#AF52DE;}
+#jc:active {
+  cursor: grabbing;
+}
+.joy-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.joy-tag {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+.joy-tag b {
+  color: var(--accent-cyan);
+}
 
-.auto-action-reason{
-  font-size:12px;font-weight:600;color:var(--txt);flex:1;min-width:200px;
-}
-.auto-action-metrics{
-  display:flex;gap:6px;font-size:10px;font-weight:700;color:var(--txt2);
-}
-.auto-badge-pill{
-  background:#FFFFFF;border:1px solid var(--bdr);border-radius:6px;padding:3px 7px;
+/* CAPTURE COLUMN */
+.cap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.auto-grid-controls{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:12px;
+/* Stop Button (Large Red Pill) */
+.btn-stop {
+  width: 100%;
+  height: 56px;
+  border-radius: 4px;
+  background: var(--accent-red);
+  border: 1px solid rgba(255, 77, 61, 0.5);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.1s, transform 0.08s;
+  box-shadow: none;
 }
-.auto-ctrl-box{
-  background:var(--card2);border:1px solid var(--bdr);border-radius:12px;
-  padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;
+.btn-stop:hover {
+  box-shadow: none;
 }
-.auto-k{
-  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2);
+.btn-stop:active {
+  transform: scale(0.97);
 }
-.mode-btn-group{
-  display:flex;gap:5px;margin-top:6px;
+
+.cap-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
-.mode-btn{
-  flex:1;height:28px;border-radius:7px;border:1px solid var(--bdr);
-  background:#FFFFFF;color:var(--txt);font-size:10px;font-weight:700;
-  font-family:var(--rf);cursor:pointer;transition:all .12s;
+.btn-cap {
+  height: 48px;
+  border-radius: var(--r-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.12s;
+  border: 1px solid var(--border);
 }
-.mode-btn.active{
-  background:#1C1C1E;color:#FFFFFF;border-color:#1C1C1E;
+.btn-cap:active {
+  transform: scale(0.95);
 }
-.clearance-row{
-  display:flex;flex-direction:column;gap:5px;margin-top:6px;
+.btn-photo {
+  background: var(--bg-surface);
+  color: #FFFFFF;
 }
-.clearance-item{
-  display:flex;align-items:center;gap:6px;font-size:10px;color:var(--txt2);font-weight:600;
+.btn-photo:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.2);
 }
-.clearance-bar-wrap{
-  flex:1;height:6px;background:#E5E5EA;border-radius:3px;overflow:hidden;
+.btn-video {
+  background: rgba(255, 77, 61, 0.1);
+  border-color: rgba(255, 77, 61, 0.3);
+  color: var(--accent-red);
 }
-.clearance-bar{
-  height:100%;background:var(--grn);border-radius:3px;transition:width .2s;
+.btn-video.recording {
+  background: rgba(255, 77, 61, 0.25);
+  border-color: var(--accent-red);
+  box-shadow: none;
 }
-.server-input{
-  flex:1;height:28px;border:1px solid var(--bdr);border-radius:6px;
-  padding:0 8px;font-size:11px;font-family:var(--rf);background:#FFFFFF;
+
+.rec-bar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 77, 61, 0.12);
+  border: 1px solid rgba(255, 77, 61, 0.3);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-red);
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+.rec-bar.on {
+  display: flex;
+}
+.rec-bar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  box-shadow: none;
+  animation: blink 0.7s infinite;
+}
+.cap-msg {
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  min-height: 18px;
+  font-family: var(--font-mono);
+  transition: color 0.2s;
+}
+.cap-msg.ok {
+  color: var(--accent-green);
+}
+.cap-msg.error {
+  color: var(--accent-red);
 }
 
 /* ─────────────────────────────────────────────────────────────
-   CONTROLS ROW (bottom)
+   GALLERY
 ───────────────────────────────────────────────────────────── */
-.a-ctrl{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  gap:12px;align-items:start;
-  padding:16px;
+.gallery-wrap {
+  margin-top: 6px;
 }
-@media(max-width:680px){
-  .a-ctrl{
-    grid-template-columns:1fr;
-    gap:12px;
-  }
+.gallery-hd {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-bottom: 8px;
 }
-
-/* D-PAD (desktop only) */
-.dpad-section{display:flex;flex-direction:column;gap:10px;}
-.dpad-wrap{display:flex;justify-content:center;}
-.dpad{
-  display:grid;
-  grid-template-columns:repeat(3,56px);
-  grid-template-rows:repeat(3,56px);
-  gap:7px;
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
 }
-.d-btn{
-  border-radius:13px;
-  background:#FFFFFF;
-  border:1px solid #E5E5EA;
-  color:#1C1C1E;font-size:1.1rem;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;
-  transition:background .06s,transform .05s,box-shadow .06s;
-  touch-action:manipulation;font-family:var(--rf);
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
-  line-height:1;
+.gitem {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #080C14;
+  position: relative;
+  aspect-ratio: 4/3;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
 }
-.d-btn:active, .d-btn.active{background:#1C1C1E;color:#FFFFFF;transform:scale(.92);box-shadow:0 2px 10px rgba(0,0,0,.18);}
-.d-stp{background:rgba(255,59,48,.15);border-color:rgba(255,59,48,.4);color:var(--red);}
-.d-stp:active, .d-stp.active{background:var(--red);color:#fff;transform:scale(.92);}
-.key-hint{
-  font-size:8px;font-weight:700;letter-spacing:.05em;
-  color:var(--txt3);margin-top:2px;text-transform:uppercase;
+.gitem:hover {
+  transform: scale(1.04);
+  border-color: var(--accent-cyan);
 }
-.d-btn:active .key-hint, .d-btn.active .key-hint{color:rgba(255,255,255,.7);}
-.d-stp:active .key-hint, .d-stp.active .key-hint{color:rgba(255,255,255,.9);}
-
-/* JOYSTICK */
-.joy-section{display:flex;flex-direction:column;align-items:center;gap:10px;}
-#jc{display:block;touch-action:none;cursor:grab;}
-#jc:active{cursor:grabbing;}
-.joy-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:center;}
-.joy-tag{
-  background:#1C1C1E;border:1px solid #1C1C1E;
-  border-radius:7px;padding:3px 9px;
-  font-size:10px;color:rgba(255,255,255,.7);font-weight:600;font-variant-numeric:tabular-nums;
+.gitem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-.joy-tag b{color:#FFFFFF;}
-
-/* CAPTURE column */
-.cap-section{display:flex;flex-direction:column;gap:8px;}
+.gitem-t {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 4px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+  padding: 1px 5px;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+.gitem-vid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.6rem;
+  color: var(--accent-cyan);
+}
+.g-dl {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+.gitem:hover .g-dl {
+  display: flex;
+}
+.g-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 16px 0;
+}
 
 /* ─────────────────────────────────────────────────────────────
-   MOBILE BOTTOM DOCK
-   On mobile, stop + photo + video shown BELOW joystick
+   MOBILE DOCK
 ───────────────────────────────────────────────────────────── */
-.mobile-dock{
-  display:none;
-  flex-direction:column;
-  gap:10px;
-  padding:0 12px 8px;
-  max-width:900px;margin:0 auto;
-}
-@media(max-width:680px){
-  .mobile-dock{display:flex;}
-  /* hide desktop capture section inside .a-ctrl on mobile */
-  .cap-section{display:none;}
+.mobile-dock {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 14px 10px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   APPLE-STYLE BUTTONS
-───────────────────────────────────────────────────────────── */
-/* Stop — large pill, always red */
-.btn-stop{
-  width:100%;height:58px;
-  border-radius:100px;
-  background:var(--red);
-  border:none;
-  font-size:1rem;font-weight:700;letter-spacing:.01em;
-  color:#fff;font-family:var(--rf);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  transition:opacity .1s,transform .08s;
-  box-shadow:0 0 0 1px rgba(255,59,48,.5),0 4px 20px rgba(255,59,48,.3);
+/* Shutter flash animation */
+@keyframes flash {
+  0% { opacity: 0.7; }
+  100% { opacity: 0; }
 }
-.btn-stop:active{opacity:.8;transform:scale(.97);}
-
-/* Photo + Video — pill style side by side */
-.cap-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-
-.btn-cap{
-  height:52px;
-  border-radius:14px;
-  font-size:.88rem;font-weight:700;letter-spacing:.01em;
-  font-family:var(--rf);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:7px;
-  transition:background .1s,transform .07s,box-shadow .1s;
-  border:1px solid;
-}
-.btn-cap:active{transform:scale(.95);}
-
-.btn-photo{
-  background:#1C1C1E;
-  border-color:#1C1C1E;
-  color:#fff;
-}
-.btn-photo:hover{background:rgba(255,255,255,.12);}
-.btn-photo:active{background:rgba(255,255,255,.20);}
-
-.btn-video{
-  background:rgba(255,67,58,.08);
-  border-color:rgba(255,67,58,.25);
-  color:var(--red);
-}
-.btn-video.recording{
-  background:rgba(255,67,58,.16);
-  border-color:var(--red);
-  box-shadow:0 0 0 2px rgba(255,67,58,.2);
-}
-.btn-video:active{background:rgba(255,67,58,.28);}
-
-/* Recording timer badge */
-.rec-bar{
-  display:none;
-  align-items:center;justify-content:center;gap:7px;
-  height:36px;border-radius:10px;
-  background:rgba(255,67,58,.08);border:1px solid rgba(255,67,58,.2);
-  font-size:12px;font-weight:700;color:var(--red);letter-spacing:.04em;
-}
-.rec-bar.on{display:flex;}
-.rec-bar-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink .7s infinite;}
-
-/* Capture status message */
-.cap-msg{
-  text-align:center;font-size:11px;color:var(--txt2);font-weight:500;
-  min-height:16px;transition:color .2s;
-}
-.cap-msg.ok{color:var(--grn);}
-
-/* ─────────────────────────────────────────────────────────────
-   GALLERY (desktop only)
-───────────────────────────────────────────────────────────── */
-.gallery-wrap{margin-top:4px;}
-.gallery-hd{
-  font-size:10px;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--txt2);font-weight:700;margin-bottom:8px;
-}
-.gallery{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
-  gap:6px;
-}
-.gitem{
-  border-radius:10px;overflow:hidden;border:1px solid var(--bdr);
-  background:#0a0a0a;position:relative;aspect-ratio:4/3;cursor:pointer;
-  transition:transform .12s,border-color .12s;
-}
-.gitem:hover{transform:scale(1.04);border-color:rgba(255,255,255,.28);}
-.gitem img{width:100%;height:100%;object-fit:cover;display:block;}
-.gitem-t{
-  position:absolute;top:4px;left:4px;
-  background:rgba(0,0,0,.65);border-radius:4px;
-  font-size:8px;font-weight:800;color:#fff;padding:1px 4px;letter-spacing:.05em;
-}
-.gitem-vid{display:flex;align-items:center;justify-content:center;
-  width:100%;height:100%;font-size:1.6rem;}
-.g-dl{
-  position:absolute;inset:0;background:rgba(0,0,0,.5);
-  display:none;align-items:center;justify-content:center;
-  font-size:1.2rem;color:#fff;text-decoration:none;
-}
-.gitem:hover .g-dl{display:flex;}
-.g-empty{
-  grid-column:1/-1;text-align:center;color:var(--txt3);
-  font-size:11px;padding:16px 0;
-}
-
-/* Flash overlay */
-@keyframes flash{0%{opacity:.6}100%{opacity:0}}
-.flash{
-  position:fixed;inset:0;background:#fff;
-  pointer-events:none;opacity:0;
-  animation:flash .3s ease-out forwards;
-  z-index:999;
+.flash {
+  position: fixed;
+  inset: 0;
+  background: #FFFFFF;
+  pointer-events: none;
+  opacity: 0;
+  animation: flash 0.3s ease-out forwards;
+  z-index: 9999;
 }
 </style>
 </head>
 <body>
 
-<!-- ── STATUS BAR ── -->
+<!-- ── TOPBAR STATUS & COMMAND DECK ── -->
 <div class="topbar">
   <div class="topbar-left">
     <div class="app-icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
         <circle cx="7" cy="17" r="2"/>
         <path d="M9 17h6"/>
@@ -581,31 +1396,87 @@ input[type=range]::-moz-range-thumb{
       </svg>
     </div>
     <div>
-      <div class="app-name">RC Car</div>
-      <div class="app-sub">Raspberry Pi 3 &bull; Dual Wireless (Wi-Fi + BT)</div>
+      <div class="app-name">
+        RC CAR GCS
+        <span class="app-badge-callsign">MK-3</span>
+      </div>
+      <div class="app-sub">Raspberry Pi 3 Model B &bull; Dual Wireless (Wi-Fi + BT RFCOMM)</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <!-- Wi-Fi Status Pill -->
+
+  <div class="topbar-right">
+    <!-- Master Emergency Stop Button -->
+    <button class="top-estop-btn" id="btn-master-estop" onclick="masterEmergencyStop()" title="Master Emergency Stop Actuators">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      E-STOP
+    </button>
+
+    <!-- Control Mode Pill -->
+    <div class="live-pill" id="control-mode-pill" style="color:var(--accent-cyan);border-color:rgba(198, 241, 53,0.3);background:rgba(198, 241, 53,0.08);">
+      <span id="control-mode-txt">GAMEPAD / MANUAL</span>
+    </div>
+
+    <!-- HC-SR04 Ultrasonic Live Sonar Pill -->
+    <div class="live-pill" id="sonar-pill" style="color:var(--accent-cyan);border-color:rgba(198, 241, 53,0.3);" title="HC-SR04 Live Ultrasonic Distance">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12a10 10 0 0 1 10-10M2 12a10 10 0 0 0 10 10M6 12a6 6 0 0 1 6-6M6 12a6 6 0 0 0 6 6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span id="sonar-txt">SONAR: --</span>
+    </div>
+
+    <!-- CPU Thermal Meter -->
+    <div class="live-pill" title="Pi 3 CPU Core Temperature">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+      <span id="cpu-temp">--°C</span>
+    </div>
+
+    <!-- Wi-Fi Link Pill -->
     <div class="live-pill" id="wifi-pill" title="Connected via Wi-Fi">
       <div class="live-dot"></div>
       <span id="wifi-txt">WI-FI</span>
     </div>
-    <!-- Bluetooth Status Pill -->
-    <div class="live-pill" id="bt-pill" style="background:rgba(0,122,255,.1);border-color:rgba(0,122,255,.3);color:#007AFF;cursor:pointer;" onclick="showBtInfo()" title="Click for Bluetooth pairing and range details">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+
+    <!-- Bluetooth Link Pill -->
+    <div class="live-pill" id="bt-pill" style="color:var(--accent-cyan);cursor:pointer;" onclick="showBtInfo()" title="Click for Bluetooth pairing and range details">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
       <span id="bt-txt">BT READY</span>
     </div>
   </div>
 </div>
 
+<!-- ── WORKSPACE VIEW TABS ── -->
+<div class="tabs-nav">
+  <button class="tab-btn active" data-tab="all" onclick="switchViewTab('all')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    All Deck
+  </button>
+  <button class="tab-btn" data-tab="vision" onclick="switchViewTab('vision')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    Vision &amp; Map
+  </button>
+  <button class="tab-btn" data-tab="cockpit" onclick="switchViewTab('cockpit')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+    Pilot Cockpit
+  </button>
+  <button class="tab-btn" data-tab="autonomy" onclick="switchViewTab('autonomy')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Autonomy &amp; AI
+  </button>
+  <button class="tab-btn" data-tab="hardware" onclick="switchViewTab('hardware')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    Hardware &amp; Tuning
+  </button>
+  <button class="tab-btn" data-tab="media" onclick="switchViewTab('media')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Media Studio
+  </button>
+</div>
+
 <!-- ── MAIN LAYOUT ── -->
 <div class="layout">
 
-  <!-- 1. CAMERA & FIELD ALIGNMENT -->
+  <!-- 1. LIVE CAMERA & FIELD ALIGNMENT -->
   <div class="card a-cam">
     <div class="cam-header">
-      <div class="lbl"><div class="lbl-dot"></div>Live Feed &bull; Field Alignment</div>
+      <div class="lbl"><div class="lbl-dot"></div>Live Video &bull; Field Alignment</div>
       <div class="cam-tools">
         <button class="tool-btn" id="btn-grid" onclick="toggleGrid()" title="Toggle Center Reticle & Heading Guidelines">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
@@ -629,58 +1500,122 @@ input[type=range]::-moz-range-thumb{
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           AI HUD
         </button>
-        <button class="tool-btn" id="btn-quick-auto" onclick="toggleAutoDrive()" title="Toggle Autonomous Driving Mode (Key: A)">
+        <button class="tool-btn" id="btn-quick-auto" onclick="toggleAutoDrive()" title="Toggle Autonomous Driving Mode (Key: Z)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg>
           Auto Drive
         </button>
       </div>
     </div>
-    
+
     <div class="cam-frame">
       <img id="cam" src="/video_feed" alt="live camera feed">
 
       <!-- Interactive Alignment Reticle & Heading Guidelines -->
       <div class="cam-align-overlay" id="cam-grid" style="display:none;">
         <svg class="grid-svg" viewBox="0 0 640 480" preserveAspectRatio="none">
-          <!-- Driving Corridor / Lane Perspective -->
-          <polygon points="140,480 270,240 370,240 500,480" fill="rgba(0,122,255,0.06)" stroke="rgba(0,122,255,0.3)" stroke-width="1.5" stroke-dasharray="5 5"/>
-          
-          <!-- Horizon Line (Pitch Level 0°) -->
-          <line x1="20" y1="240" x2="620" y2="240" stroke="rgba(52,199,89,0.75)" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <text x="30" y="234" fill="rgba(52,199,89,0.9)" font-size="10" font-weight="700">HORIZON 0°</text>
+          <rect x="8" y="8" width="624" height="464" rx="8" fill="none" stroke="rgba(198, 241, 53,0.45)" stroke-width="1.5" stroke-dasharray="8 6"/>
+          <text x="20" y="28" fill="rgba(198, 241, 53,0.9)" font-size="10" font-weight="700" font-family="'JetBrains Mono', monospace">FULL CAMERA FEED SCANNER (640x480)</text>
 
-          <!-- Vehicle Forward Centerline (Yaw Center 0°) -->
           <line x1="320" y1="20" x2="320" y2="460" stroke="rgba(255,59,48,0.75)" stroke-width="1.5" stroke-dasharray="6 4"/>
-          <text x="326" y="36" fill="rgba(255,59,48,0.9)" font-size="10" font-weight="700">CENTERLINE</text>
+          <text x="326" y="44" fill="rgba(255,59,48,0.9)" font-size="10" font-weight="700" font-family="'JetBrains Mono', monospace">CENTERLINE</text>
 
-          <!-- Center Crosshair Reticle -->
-          <circle cx="320" cy="240" r="32" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/>
-          <circle cx="320" cy="240" r="3" fill="#FF3B30"/>
-          <line x1="284" y1="240" x2="356" y2="240" stroke="#FFFFFF" stroke-width="2"/>
-          <line x1="320" y1="204" x2="320" y2="276" stroke="#FFFFFF" stroke-width="2"/>
+          <circle cx="320" cy="240" r="32" fill="none" stroke="rgba(198, 241, 53,0.85)" stroke-width="1.5"/>
+          <circle cx="320" cy="240" r="3" fill="#FF4D3D"/>
+          <line x1="284" y1="240" x2="356" y2="240" stroke="#C6F135" stroke-width="2"/>
+          <line x1="320" y1="204" x2="320" y2="276" stroke="#C6F135" stroke-width="2"/>
 
-          <!-- Yaw Angle Ticks -->
           <line x1="220" y1="230" x2="220" y2="250" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-          <text x="210" y="224" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="600">-15°</text>
+          <text x="210" y="224" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="600" font-family="'JetBrains Mono', monospace">-15°</text>
           <line x1="420" y1="230" x2="420" y2="250" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
-          <text x="412" y="224" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="600">+15°</text>
+          <text x="412" y="224" fill="rgba(255,255,255,0.75)" font-size="9" font-weight="600" font-family="'JetBrains Mono', monospace">+15°</text>
         </svg>
         <div class="grid-badge">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="#34C759"><circle cx="12" cy="12" r="10"/></svg>
-          ALIGNMENT GRID ACTIVE &bull; VEHICLE CENTER
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="#4ADE80"><circle cx="12" cy="12" r="10"/></svg>
+          FULL CAMERA FEED &bull; COLLISION GUARD ACTIVE
         </div>
       </div>
 
+      <!-- Visual Destination Pin Overlay -->
+      <div id="target-pin-layer" class="target-pin-layer" style="display:none;">
+        <div class="pin-reticle" id="pin-reticle" style="left:50%;top:50%;">
+          <div class="pin-radar"></div>
+          <div class="pin-center"></div>
+          <div class="pin-tag" id="pin-tag">TARGET: (320, 240)</div>
+        </div>
+      </div>
+      <button id="btn-clear-pin" class="pin-clear-btn" style="display:none;" onclick="clearDestinationPin(event)">
+        ✕ Clear Pin
+      </button>
+
       <div class="cam-hud">
         <div class="cam-badge"><div class="rec-dot"></div>LIVE</div>
+        <div class="cam-badge" id="cam-sonar-badge" style="background:rgba(198, 241, 53,0.18);border-color:rgba(198, 241, 53,0.4);color:var(--accent-cyan);" title="HC-SR04 Ultrasonic Distance">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:2px;"><path d="M2 12a10 10 0 0 1 10-10M2 12a10 10 0 0 0 10 10M6 12a6 6 0 0 1 6-6M6 12a6 6 0 0 0 6 6"/></svg>
+          <span id="cam-sonar-txt">HC-SR04: --</span>
+        </div>
         <span class="cam-res" id="cam-hud-info">640 &times; 480 &bull; Fit</span>
       </div>
     </div>
   </div>
 
-  <!-- STATUS (desktop only) -->
+  <!-- 2. 3D SPATIAL WORLD MAP & ACTIVE VISION FRUSTUM -->
+  <div class="card a-map" id="spatial-map-card">
+    <div class="map-header">
+      <div class="lbl">
+        <div class="lbl-dot" id="map-dot"></div>
+        3D Spatial World Map &bull; Active Gaze Frustum
+      </div>
+      <div class="map-tools">
+        <span class="map-badge" id="gaze-lock-badge" title="Active camera gaze servo tracking">
+          GAZE: LOCKED (90°)
+        </span>
+        <button class="tool-btn active" id="btn-toggle-gaze" onclick="toggleGazeTracking()" title="Toggle camera pan gaze lock on 3D target">
+          Lock Gaze
+        </button>
+        <button class="tool-btn" onclick="resetCarPose()" title="Reset Dead-Reckoning Odometry Pose to (0,0) 90°">
+          Reset (0,0)
+        </button>
+        <button class="tool-btn" id="btn-clear-3d-target" onclick="clearMapRoute(event)" title="Clear all map route points">
+          Clear Route
+        </button>
+      </div>
+    </div>
+
+    <!-- 3D Spatial Canvas Frame -->
+    <div class="spatial-canvas-wrap" id="spatial-canvas-wrap">
+      <canvas id="spatial-map-canvas" width="600" height="420"></canvas>
+
+      <!-- Interactive Map Overlay HUD -->
+      <div class="map-hud-overlay">
+        <div class="map-hud-pill">
+          <span class="map-hud-k">VEHICLE POSE</span>
+          <span class="map-hud-v" id="hud-car-pose">X: 0.0 &bull; Y: 0.0 &bull; 90.0°</span>
+        </div>
+        <div class="map-hud-pill">
+          <span class="map-hud-k">PAN SERVO</span>
+          <span class="map-hud-v" id="hud-servo-angle">90.0° (Forward)</span>
+        </div>
+        <div class="map-hud-pill" id="hud-sonar-pill">
+          <span class="map-hud-k">ULTRASONIC</span>
+          <span class="map-hud-v" id="hud-sonar-val">-- cm</span>
+        </div>
+        <div class="map-hud-pill" id="hud-target-pill" style="display:none;">
+          <span class="map-hud-k">MAP ROUTE</span>
+          <span class="map-hud-v" id="hud-target-info">X: 0 &bull; Y: 0 (0cm)</span>
+        </div>
+      </div>
+
+      <!-- Quick Guidance Pill -->
+      <div class="map-hint-pill">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+        CLICK MAP TO ADD ORDERED ROUTE POINTS &bull; SELECT AI TO ENGAGE
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. STATUS (DESKTOP) -->
   <div class="card a-stat desktop-only">
-    <div class="lbl" style="margin-bottom:10px;"><div class="lbl-dot"></div>Status</div>
+    <div class="lbl" style="margin-bottom:12px;"><div class="lbl-dot"></div>Status &bull; Actuator Telemetry</div>
     <div class="st-wrap">
       <div class="st-ring">
         <svg viewBox="0 0 80 80">
@@ -697,30 +1632,30 @@ input[type=range]::-moz-range-thumb{
         <div class="hud-box"><div class="hud-k">Joy X</div><div class="hud-v" id="hx">0.00</div></div>
         <div class="hud-box"><div class="hud-k">Joy Y</div><div class="hud-v" id="hy">0.00</div></div>
         <div class="hud-box"><div class="hud-k">Servo Pan</div><div class="hud-v"><span id="hs">90</span>°</div></div>
-        <div class="hud-box"><div class="hud-k">Signal</div><div class="hud-v" style="color:var(--grn)">LIVE</div></div>
+        <div class="hud-box"><div class="hud-k">Signal</div><div class="hud-v" style="color:var(--accent-green)">LIVE</div></div>
       </div>
     </div>
   </div>
 
-  <!-- SERVO & CALIBRATION (desktop only) -->
+  <!-- 4. SERVO & CALIBRATION (DESKTOP) -->
   <div class="card a-servo desktop-only">
-    <div class="lbl" style="margin-bottom:10px;"><div class="lbl-dot"></div>Servo Pan &bull; GPIO 12</div>
+    <div class="lbl" style="margin-bottom:12px;"><div class="lbl-dot"></div>Camera Gimbal &bull; GPIO 12 PWM</div>
     <div class="sv-top">
       <svg width="60" height="38" viewBox="0 0 60 38" style="flex-shrink:0">
-        <path d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="4" stroke-linecap="round"/>
-        <path id="arc" d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="#1C1C1E" stroke-width="4" stroke-linecap="round"
-              stroke-dasharray="85" stroke-dashoffset="42" style="transition:stroke-dashoffset .2s"/>
+        <path d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4" stroke-linecap="round"/>
+        <path id="arc" d="M4 36 A27 27 0 0 1 56 36" fill="none" stroke="#C6F135" stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="85" stroke-dashoffset="42" style="transition:stroke-dashoffset .2s;filter:drop-shadow(0 0 4px #C6F135);"/>
         <defs><filter id="gf"><feGaussianBlur stdDeviation="2" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-        <circle id="aknob" cx="30" cy="9" r="4.5" fill="#1C1C1E" filter="url(#gf)" style="transition:cx .2s,cy .2s"/>
+        <circle id="aknob" cx="30" cy="9" r="4.5" fill="#C6F135" filter="url(#gf)" style="transition:cx .2s,cy .2s"/>
       </svg>
       <div>
         <div class="sv-num"><span id="sdeg">90</span><sup>°</sup></div>
         <div class="sv-lbl">Pan Angle &bull; Trim: <b id="strim">+0.0°</b></div>
       </div>
     </div>
-    
-    <input type="range" id="sl" min="0" max="180" value="90"
+
+    <input type="range" id="sl" min="25" max="155" value="90"
            oninput="setServo(this.value)" style="--pct:50%">
 
     <!-- Fine Nudge Controls -->
@@ -733,17 +1668,20 @@ input[type=range]::-moz-range-thumb{
     </div>
 
     <!-- Alignment Calibration Actions -->
-    <div style="display:flex;gap:6px;margin-top:8px;">
-      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:28px;" onclick="calibrateCurrentAsCenter()" title="Calibrate current position as vehicle true forward center">
+    <div style="display:flex;gap:6px;margin-top:10px;">
+      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:30px;" onclick="calibrateCurrentAsCenter()" title="Calibrate current position as vehicle true forward center">
         Set Center
       </button>
-      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:28px;color:var(--txt3);" onclick="resetServoTrim()" title="Reset calibration offset to 0°">
+      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:30px;color:var(--text-muted);" onclick="resetServoTrim()" title="Reset calibration offset to 0°">
         Reset Trim
+      </button>
+      <button class="sv-btn sv-btn-sec" style="font-size:10px;height:30px;color:var(--accent-green);font-weight:700;" onclick="relaxServo()" title="Stop PWM to cool down servo coils (de-energize)">
+        Sleep / Relax
       </button>
     </div>
   </div>
 
-  <!-- AUTONOMOUS DRIVING & AI PERCEPTION CARD -->
+  <!-- 5. AUTONOMOUS DRIVING & AI PERCEPTION CARD -->
   <div class="card a-auto" id="auto-card">
     <div class="auto-header">
       <div class="lbl">
@@ -751,8 +1689,10 @@ input[type=range]::-moz-range-thumb{
         Autonomous Driving &bull; Edge Perception
       </div>
       <div class="auto-header-badges">
-        <span class="mode-pill" id="auto-mode-badge">MODE: HYBRID</span>
-        <span class="server-pill" id="auto-server-badge">EDGE SERVER: STANDBY</span>
+        <button class="mode-pill active" id="btn-manual-mode" onclick="setControlMode('manual')">GAMEPAD</button>
+        <button class="mode-pill" id="btn-ai-mode" onclick="setControlMode('ai')">AI CONTROL</button>
+        <span class="mode-pill" id="auto-mode-badge">MODE: ON-BOARD AI</span>
+        <span class="server-pill" id="auto-server-badge" style="display:none;">EDGE SERVER</span>
         <button class="auto-toggle-btn" id="btn-auto-toggle" onclick="toggleAutoDrive()">
           <span class="toggle-switch-dot" id="auto-switch-dot"></span>
           <span id="auto-toggle-label">ENGAGE AUTO DRIVE</span>
@@ -763,11 +1703,19 @@ input[type=range]::-moz-range-thumb{
     <!-- Active Action Decision Banner -->
     <div class="auto-action-bar" id="auto-action-bar">
       <div class="auto-action-badge" id="auto-action-badge">STANDBY</div>
-      <div class="auto-action-reason" id="auto-action-reason">Manual driving control active. Press 'Engage Auto Drive' or press Key [A].</div>
+      <div class="auto-action-reason" id="auto-action-reason">Manual driving control active. Press 'Engage Auto Drive' or press Key [Z].</div>
       <div class="auto-action-metrics">
+        <span class="auto-badge-pill" id="auto-pose-badge" style="color:var(--accent-cyan);">POSE: (0,0) 0°</span>
+        <span class="auto-badge-pill" id="auto-sonar-badge" style="color:var(--accent-cyan);font-weight:700;">SONAR: -- cm</span>
         <span class="auto-badge-pill" id="auto-fps-badge">0.0 FPS</span>
-        <span class="auto-badge-pill" id="auto-haz-badge" style="color:var(--grn);">CLEAR</span>
+        <span class="auto-badge-pill" id="auto-la-badge" style="color:var(--accent-cyan);font-weight:700;">LANE: ON</span>
+        <span class="auto-badge-pill" id="auto-tr-badge" style="color:var(--accent-cyan);font-weight:700;">RULES: ON</span>
+        <span class="auto-badge-pill" id="auto-haz-badge" style="color:var(--accent-green);">CLEAR</span>
       </div>
+    </div>
+    <div id="auto-obs-pose-banner" style="display:none;margin-top:6px;padding:6px 12px;border-radius:8px;background:rgba(245,165,36,0.12);border:1px solid rgba(245,165,36,0.3);color:var(--accent-amber);font-size:11px;font-weight:700;letter-spacing:0.02em;align-items:center;gap:6px;font-family:var(--font-mono);">
+      <span>⚠️ LAST OBSTACLE POSE:</span>
+      <span id="auto-obs-pose-val">(0,0) 0°</span>
     </div>
 
     <!-- Control Strips: Driving Modes, Clearance, Speed, and Server AI -->
@@ -776,9 +1724,10 @@ input[type=range]::-moz-range-thumb{
       <div class="auto-ctrl-box">
         <div class="auto-k">Driving Mode</div>
         <div class="mode-btn-group">
-          <button class="mode-btn active" id="btn-mode-hybrid" onclick="setAutoMode('hybrid')">Hybrid</button>
-          <button class="mode-btn" id="btn-mode-local" onclick="setAutoMode('local_ai')">Local Vision</button>
+          <button class="mode-btn" id="btn-mode-hybrid" onclick="setAutoMode('hybrid')">Hybrid</button>
+          <button class="mode-btn active" id="btn-mode-local" onclick="setAutoMode('local_ai')">Local AI</button>
           <button class="mode-btn" id="btn-mode-server" onclick="setAutoMode('server_ai')">Server AI</button>
+          <button class="mode-btn" id="btn-mode-paid" onclick="setAutoMode('paid_ai')">Paid Vision</button>
         </div>
       </div>
 
@@ -787,34 +1736,58 @@ input[type=range]::-moz-range-thumb{
         <div class="auto-k">Path Clearance Discovery</div>
         <div class="clearance-row">
           <div class="clearance-item">
-            <span style="width:36px;">Left:</span>
+            <span style="width:38px;">Left:</span>
             <div class="clearance-bar-wrap"><div class="clearance-bar" id="bar-left" style="width:100%"></div></div>
             <b id="val-clear-left">100%</b>
           </div>
           <div class="clearance-item">
-            <span style="width:36px;">Right:</span>
+            <span style="width:38px;">Right:</span>
             <div class="clearance-bar-wrap"><div class="clearance-bar" id="bar-right" style="width:100%"></div></div>
             <b id="val-clear-right">100%</b>
           </div>
         </div>
-        <button class="tool-btn" onclick="triggerPathScan()" title="Pan camera servo to evaluate left vs right path clearance" style="margin-top:6px;justify-content:center;">
+        <button class="tool-btn" onclick="triggerPathScan()" title="Pan camera servo to evaluate left vs right path clearance" style="margin-top:8px;justify-content:center;">
           ⟳ Scan Clearance Sweep
         </button>
       </div>
 
+      <!-- Ultrasonic Sensor Real-Time Distance Widget -->
+      <div class="auto-ctrl-box">
+        <div class="auto-k">Ultrasonic Radar (HC-SR04)</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+          <div style="display:flex;align-items:baseline;gap:4px;">
+            <span id="sonar-dist-large" style="font-size:26px;font-weight:800;color:var(--accent-cyan);font-family:var(--font-mono);">--</span>
+            <span style="font-size:12px;color:var(--text-muted);font-weight:600;font-family:var(--font-mono);">cm</span>
+          </div>
+          <span id="sonar-status-badge" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(74,222,128,0.15);color:var(--accent-green);border:1px solid rgba(74,222,128,0.3);font-family:var(--font-mono);">
+            CLEAR
+          </span>
+        </div>
+        <div class="clearance-bar-wrap" style="margin-top:8px;height:8px;">
+          <div class="clearance-bar" id="sonar-meter-bar" style="width:100%;background:var(--accent-green);transition:width 0.15s ease, background 0.2s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--text-muted);font-weight:600;font-family:var(--font-mono);">
+          <span>0cm (Hit)</span>
+          <span>12cm (Rev)</span>
+          <span>20cm (Stop)</span>
+          <span>35cm (Warn)</span>
+          <span>&gt;100cm</span>
+        </div>
+      </div>
+
       <!-- 3. Cruise Speed Limit -->
       <div class="auto-ctrl-box">
-        <div class="auto-k">Cruise Speed Limit &bull; <b id="val-cruise-spd">55%</b></div>
-        <input type="range" id="sl-cruise" min="25" max="100" value="55" oninput="updateCruiseSpeed(this.value)" style="--pct:55%;margin-top:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--txt3);font-weight:600;margin-top:4px;">
+        <div class="auto-k">Cruise Speed Limit &bull; <b id="val-cruise-spd" style="color:var(--accent-cyan);font-family:var(--font-mono);">55%</b></div>
+        <input type="range" id="sl-cruise" min="25" max="100" value="55" oninput="updateCruiseSpeed(this.value)" style="--pct:55%;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--text-muted);font-weight:600;">
           <span>Crawl (25%)</span><span>Cruising</span><span>Fast (100%)</span>
         </div>
       </div>
 
       <!-- 4. Edge Server IP & Overlay -->
       <div class="auto-ctrl-box">
-        <div class="auto-k">Edge AI Server & Overlay</div>
-        <div style="display:flex;gap:6px;margin-top:6px;">
+        <div class="auto-k">Edge AI Server &amp; HUD</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
           <input type="text" id="input-server-url" value="http://127.0.0.1:8000" placeholder="http://192.168.1.X:8000" class="server-input">
           <button class="tool-btn" onclick="saveServerUrl()">Connect</button>
         </div>
@@ -824,58 +1797,119 @@ input[type=range]::-moz-range-thumb{
           </button>
         </div>
       </div>
+
+      <!-- 5. Map Route Points -->
+      <div class="auto-ctrl-box">
+        <div class="auto-k">Map Route Points</div>
+        <div style="font-size:9.5px;color:var(--text-secondary);margin-top:5px;line-height:1.35;">Click the spatial map above to add Point 1, Point 2, and so on. Points are stored in click order.</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="tool-btn" onclick="clearMapRoute(event)" style="flex:1;justify-content:center;">Clear Map Route</button>
+        </div>
+        <div id="destination-status" style="font-size:9px;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono);">No destinations registered</div>
+      </div>
+
+      <!-- 6. Real-World GPS Target Navigation -->
+      <div class="auto-ctrl-box">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="auto-k">GPS Waypoint Navigation</div>
+          <span style="font-size:8.5px;font-weight:700;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);">WGS-84</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+          <input type="number" step="0.000001" id="gps-target-lat" placeholder="Target Latitude" class="server-input">
+          <input type="number" step="0.000001" id="gps-target-lon" placeholder="Target Longitude" class="server-input">
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button class="tool-btn" onclick="plotGpsTarget()" style="flex:1;justify-content:center;">Plot Target</button>
+          <button class="tool-btn" onclick="useDeviceGpsForOrigin()" title="Set Car GPS Origin from browser geolocation" style="justify-content:center;">Device GPS</button>
+        </div>
+        <div id="gps-live-display" style="font-size:9px;color:var(--text-muted);margin-top:6px;line-height:1.3;font-family:var(--font-mono);">
+          Estimated GPS: <b>9.591600, 76.522200</b> (No onboard GPS chip; device geolocation relayed)
+        </div>
+      </div>
+
+      <!-- 7. Driving Assists & Traffic Rules -->
+      <div class="auto-ctrl-box">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="auto-k">Assists &amp; Traffic Code</div>
+          <span style="font-size:8.5px;font-weight:700;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);">LKA &bull; CODE</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+          <button class="tool-btn active" id="btn-toggle-lane-assist" onclick="toggleLaneAssist()" style="justify-content:center;">
+            Lane Assist: ON
+          </button>
+          <button class="tool-btn active" id="btn-toggle-traffic-rules" onclick="toggleTrafficRules()" style="justify-content:center;">
+            Traffic Rules: ON
+          </button>
+        </div>
+        <div id="assists-status-hint" style="font-size:9px;color:var(--text-muted);margin-top:6px;line-height:1.35;">
+          LKA boundary departure prevention &bull; Red light &amp; stop sign recognition
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- CONTROLS ROW -->
+  <!-- 6. CONTROLS COCKPIT ROW -->
   <div class="card a-ctrl">
 
-    <!-- D-Pad (desktop only) -->
+    <!-- D-Pad (Desktop) -->
     <div class="dpad-section desktop-only">
-      <div class="lbl"><div class="lbl-dot"></div>D-Pad &bull; WASD Keys</div>
+      <div class="lbl"><div class="lbl-dot"></div>Tactile D-Pad &bull; WASD / Arrow Keys</div>
       <div class="dpad-wrap">
         <div class="dpad">
           <div></div>
-          <button class="d-btn" id="dpad-up" onpointerdown="hold('forward')"  onpointerup="rel()" onpointercancel="rel()" title="Forward (W or Up Arrow)">&#9650;<span class="key-hint">W</span></button>
+          <button class="d-btn" id="dpad-up" onpointerdown="hold('forward')" onpointerup="rel()" onpointercancel="rel()" title="Forward (W, A, or Up Arrow)">&#9650;<span class="key-hint">W/A</span></button>
           <div></div>
-          <button class="d-btn" id="dpad-left" onpointerdown="hold('left')"     onpointerup="rel()" onpointercancel="rel()" title="Left (A or Left Arrow)">&#9664;<span class="key-hint">A</span></button>
+          <button class="d-btn" id="dpad-left" onpointerdown="hold('left')" onpointerup="rel()" onpointercancel="rel()" title="Left (Left Arrow)">&#9664;<span class="key-hint">&larr;</span></button>
           <button class="d-btn d-stp" id="dpad-stop" onpointerdown="rel()" title="Emergency Stop (Spacebar)">&#9632;<span class="key-hint">SPACE</span></button>
-          <button class="d-btn" id="dpad-right" onpointerdown="hold('right')"    onpointerup="rel()" onpointercancel="rel()" title="Right (D or Right Arrow)">&#9654;<span class="key-hint">D</span></button>
+          <button class="d-btn" id="dpad-right" onpointerdown="hold('right')" onpointerup="rel()" onpointercancel="rel()" title="Right (Right Arrow)">&#9654;<span class="key-hint">&rarr;</span></button>
           <div></div>
-          <button class="d-btn" id="dpad-down" onpointerdown="hold('backward')" onpointerup="rel()" onpointercancel="rel()" title="Reverse (S or Down Arrow)">&#9660;<span class="key-hint">S</span></button>
+          <button class="d-btn" id="dpad-down" onpointerdown="hold('backward')" onpointerup="rel()" onpointercancel="rel()" title="Reverse (S, D, or Down Arrow)">&#9660;<span class="key-hint">S/D</span></button>
           <div></div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:4px;line-height:1.35;font-weight:600;">
-        <b>W A S D</b> Drive &bull; <b>Space</b> Stop<br><b>Q / E</b> Pan Camera &bull; <b>C</b> Center
+      <div style="font-size:10.5px;color:var(--text-secondary);text-align:center;margin-top:4px;line-height:1.4;font-weight:600;font-family:var(--font-mono);">
+        <b>W/A</b> Fwd &bull; <b>S/D</b> Rev &bull; <b>&larr;/&rarr;</b> Turn &bull; <b>Space</b> Stop<br><b>Q / E</b> Pan Gimbal &bull; <b>C</b> Center
       </div>
 
-      <!-- Wheel Direction Alignment & Test Drawer -->
-      <div style="background:var(--card2);border:1px solid var(--bdr);border-radius:12px;padding:8px 10px;margin-top:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--txt2);text-transform:uppercase;">Wheel Direction Calibration</span>
-          <span id="motor-pol-badge" style="font-size:9px;font-weight:700;color:var(--txt3);">L: +1 | R: +1</span>
+      <!-- Wheel Direction Calibration & Channel Diagnostics -->
+      <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-top:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--text-secondary);text-transform:uppercase;">Wheel Polarity Calibration</span>
+          <span id="motor-pol-badge" style="font-size:9.5px;font-weight:700;color:var(--accent-cyan);font-family:var(--font-mono);">L: -1 | R: -1</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;" onclick="flipMotor('left')" title="Invert Left Wheels forward/reverse polarity">
+          <button class="tool-btn" style="justify-content:center;font-size:10.5px;padding:6px;" onclick="flipMotor('left')" title="Invert Left Wheels forward/reverse polarity">
             ⟲ Flip Left
           </button>
-          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;" onclick="flipMotor('right')" title="Invert Right Wheels forward/reverse polarity">
+          <button class="tool-btn" style="justify-content:center;font-size:10.5px;padding:6px;" onclick="flipMotor('right')" title="Invert Right Wheels forward/reverse polarity">
             ⟲ Flip Right
           </button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px;">
-          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;background:#F2F2F7;" onclick="testMotor('left_fwd')" title="Spin Left wheels forward for 1 second">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+          <button class="tool-btn" style="justify-content:center;font-size:10.5px;padding:6px;" onclick="testMotor('left_fwd')" title="Spin Left wheels forward for 1 second">
             ▶ Test Left
           </button>
-          <button class="tool-btn" style="justify-content:center;font-size:10px;padding:5px 6px;background:#F2F2F7;" onclick="testMotor('right_fwd')" title="Spin Right wheels forward for 1 second">
+          <button class="tool-btn" style="justify-content:center;font-size:10.5px;padding:6px;" onclick="testMotor('right_fwd')" title="Spin Right wheels forward for 1 second">
             ▶ Test Right
           </button>
         </div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:700;line-height:1.4;font-family:var(--font-mono);">
+            L298N CHANNEL TEST &bull; lift wheels clear of ground<br>
+            IN1/2 = GPIO 17/18 &bull; IN3/4 = GPIO 22/23
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px;">
+            <button class="tool-btn" style="justify-content:center;font-size:9px;padding:5px 2px;" onclick="testDriverChannel('left_fwd')">L FWD</button>
+            <button class="tool-btn" style="justify-content:center;font-size:9px;padding:5px 2px;" onclick="testDriverChannel('left_rev')">L REV</button>
+            <button class="tool-btn" style="justify-content:center;font-size:9px;padding:5px 2px;" onclick="testDriverChannel('right_fwd')">R FWD</button>
+            <button class="tool-btn" style="justify-content:center;font-size:9px;padding:5px 2px;" onclick="testDriverChannel('right_rev')">R REV</button>
+          </div>
+          <div id="driver-test-result" style="font-size:9px;color:var(--text-muted);margin-top:6px;line-height:1.35;font-family:var(--font-mono);">Select one channel. Each pulse stops automatically.</div>
+        </div>
       </div>
 
-      <!-- Desktop capture buttons under dpad -->
-      <div class="cap-row" style="margin-top:8px;">
+      <!-- Desktop Capture Buttons under D-Pad -->
+      <div class="cap-row" style="margin-top:10px;">
         <button class="btn-cap btn-photo" onclick="capturePhoto()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           Photo
@@ -891,15 +1925,15 @@ input[type=range]::-moz-range-thumb{
       <div class="gallery-wrap">
         <div class="gallery-hd" style="display:flex;align-items:center;gap:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          Gallery
+          Capture Gallery
         </div>
         <div class="gallery" id="gallery"><div class="g-empty">No captures yet</div></div>
       </div>
     </div>
 
-    <!-- 2. JOYSTICK (center) -->
+    <!-- Precision Analog Joystick (Center) -->
     <div class="joy-section">
-      <div class="lbl"><div class="lbl-dot"></div>Analog Controller</div>
+      <div class="lbl"><div class="lbl-dot"></div>Proportional Virtual Thumbstick</div>
       <canvas id="jc" width="240" height="240"></canvas>
       <div class="joy-meta">
         <div class="joy-tag">X:&nbsp;<b id="vx">0.00</b></div>
@@ -908,14 +1942,14 @@ input[type=range]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- CAPTURE (desktop right column) -->
+    <!-- Capture Right Column (Desktop) -->
     <div class="cap-section desktop-only">
-      <div class="lbl"><div class="lbl-dot"></div>Capture</div>
+      <div class="lbl"><div class="lbl-dot"></div>Emergency Action &bull; Media</div>
       <button class="btn-stop" onclick="rel()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-        STOP
+        EMERGENCY STOP
       </button>
-      <div style="height:4px"></div>
+      <div style="height:6px"></div>
       <div class="cap-row">
         <button class="btn-cap btn-photo" onclick="capturePhoto()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -935,15 +1969,13 @@ input[type=range]::-moz-range-thumb{
 
 </div><!-- /layout -->
 
-<!-- ── MOBILE DOCK (below joystick on mobile) ── -->
+<!-- ── MOBILE DOCK (TOUCHSCREEN DEVICES) ── -->
 <div class="mobile-dock">
-  <!-- 1. STOP -->
   <button class="btn-stop" onclick="rel()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-    STOP
+    EMERGENCY STOP
   </button>
 
-  <!-- 2. Photo + Video Buttons -->
   <div class="cap-row">
     <button class="btn-cap btn-photo" onclick="capturePhoto()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -958,18 +1990,18 @@ input[type=range]::-moz-range-thumb{
   <div class="rec-bar" id="rec-bar-m"><div class="rec-bar-dot"></div><span id="rec-t-m">00:00</span></div>
   <div class="cap-msg" id="cap-msg-m">Ready</div>
 
-  <!-- 3. Mobile Servo Pan & Calibration -->
-  <div class="card" style="padding:14px;margin-top:4px;">
-    <div class="lbl" style="margin-bottom:8px;"><div class="lbl-dot"></div>Servo Pan &bull; GPIO 12</div>
+  <!-- Mobile Servo Pan & Calibration -->
+  <div class="card" style="padding:14px;margin-top:6px;">
+    <div class="lbl" style="margin-bottom:10px;"><div class="lbl-dot"></div>Camera Gimbal &bull; GPIO 12</div>
     <div class="sv-top" style="margin-bottom:8px;">
       <div>
         <div class="sv-num"><span id="sdeg-m">90</span><sup>°</sup></div>
         <div class="sv-lbl">Pan Angle &bull; Trim: <b id="strim-m">+0.0°</b></div>
       </div>
     </div>
-    <input type="range" id="sl-m" min="0" max="180" value="90"
+    <input type="range" id="sl-m" min="25" max="155" value="90"
            oninput="setServo(this.value)" style="--pct:50%">
-    <div class="sv-btns" style="margin-bottom:8px;">
+    <div class="sv-btns" style="margin-bottom:10px;">
       <button class="sv-btn sv-btn-sec" onclick="nudgeServo(-5)">-5°</button>
       <button class="sv-btn sv-btn-sec" onclick="nudgeServo(-1)">-1°</button>
       <button class="sv-btn" onclick="setServo(90)">Center</button>
@@ -977,13 +2009,14 @@ input[type=range]::-moz-range-thumb{
       <button class="sv-btn sv-btn-sec" onclick="nudgeServo(5)">+5°</button>
     </div>
     <div style="display:flex;gap:6px;">
-      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:30px;" onclick="calibrateCurrentAsCenter()">Set Center</button>
-      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:30px;color:var(--txt3);" onclick="resetServoTrim()">Reset Trim</button>
+      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:32px;" onclick="calibrateCurrentAsCenter()">Set Center</button>
+      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:32px;color:var(--text-muted);" onclick="resetServoTrim()">Reset Trim</button>
+      <button class="sv-btn sv-btn-sec" style="font-size:11px;height:32px;color:var(--accent-green);font-weight:700;" onclick="relaxServo()">Sleep / Relax</button>
     </div>
   </div>
 
-  <!-- 4. Mobile Saved Media Gallery -->
-  <div class="card" style="padding:14px;margin-top:4px;">
+  <!-- Mobile Saved Media Gallery -->
+  <div class="card" style="padding:14px;margin-top:6px;">
     <div class="gallery-hd" style="display:flex;align-items:center;gap:6px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       Saved Media Gallery
@@ -1015,11 +2048,6 @@ try {
 function applyCamAlignmentUI(){
   var img = document.getElementById('cam');
   if (!img) return;
-
-  var sx = camAlignment.flip_h ? -1 : 1;
-  var sy = camAlignment.flip_v ? -1 : 1;
-  var r  = camAlignment.rotation || 0;
-  img.style.transform = 'scale(' + sx + ',' + sy + ') rotate(' + r + 'deg)';
 
   if (camAlignment.fit_mode === 'cover') {
     img.classList.add('cover-mode');
@@ -1149,6 +2177,13 @@ function resetServoTrim(){
   } catch(e){}
 }
 
+function relaxServo(){
+  fetch('/api/servo/relax', {method: 'POST'})
+    .then(function(r){return r.json();})
+    .then(function(){setMsg('Servo relaxed — coils de-energized', 'ok');})
+    .catch(function(){});
+}
+
 function updateTrimDisplay(offset){
   var offStr = (offset >= 0 ? '+' : '') + Number(offset).toFixed(1) + '°';
   ['strim', 'strim-m'].forEach(function(id){
@@ -1160,59 +2195,140 @@ function updateTrimDisplay(offset){
 // Initial UI setup on page load
 applyCamAlignmentUI();
 
+// Query initial alignment from backend
+fetch('/api/camera/alignment')
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if (d && d.status === 'success') {
+      camAlignment.flip_h = !!d.flip_h;
+      camAlignment.flip_v = !!d.flip_v;
+      camAlignment.rotation = d.rotation || 0;
+      applyCamAlignmentUI();
+    }
+  }).catch(function(){});
+
+/* ── TAP-TO-NAVIGATE VISUAL DESTINATION PINNING ─────── */
+function updateCameraTargetPinUI(pin) {
+  var layer = document.getElementById('target-pin-layer');
+  var reticle = document.getElementById('pin-reticle');
+  var tag = document.getElementById('pin-tag');
+  var btnClear = document.getElementById('btn-clear-pin');
+  if (!layer) return;
+
+  if (pin && (pin.world_x != null || pin.x >= 0)) {
+    if (pin.in_fov && pin.x >= 0 && pin.y >= 0) {
+      if (reticle) {
+        reticle.style.left = (pin.x / 640 * 100) + '%';
+        reticle.style.top = (pin.y / 480 * 100) + '%';
+        reticle.style.display = 'block';
+      }
+      if (tag) {
+        var wStr = pin.world_x != null ? ('(' + Math.round(pin.world_x) + ',' + Math.round(pin.world_y) + ')') : '';
+        var dStr = pin.dist_cm != null ? (' • ' + Math.round(pin.dist_cm) + 'cm') : '';
+        tag.textContent = '🎯 TARGET 3D: ' + wStr + dStr;
+      }
+    } else {
+      if (reticle) reticle.style.display = 'none';
+    }
+    layer.style.display = 'block';
+    if (btnClear) btnClear.style.display = 'flex';
+  } else {
+    layer.style.display = 'none';
+    if (reticle) reticle.style.display = 'none';
+    if (btnClear) btnClear.style.display = 'none';
+  }
+}
+
+function setDestinationPin(x, y) {
+  var bearing = (((x - 320) / 320) * 31.1).toFixed(1);
+  var bearingSign = Number(bearing) >= 0 ? '+' : '';
+
+  fetch('/api/auto/target_pin', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({x: x, y: y})
+  }).then(function(r){return r.json();})
+    .then(function(res){
+      var p = res.target_pin || {};
+      updateCameraTargetPinUI(p);
+      if (typeof applyControlModeUI === 'function') applyControlModeUI(true);
+      var wStr = (p.world_x != null && p.world_y != null) ? 'World 3D: (' + Math.round(p.world_x) + ',' + Math.round(p.world_y) + ')cm | ' : '';
+      var dStr = p.dist_cm != null ? Math.round(p.dist_cm) + 'cm ahead | ' : '';
+      setMsg('🎯 3D Destination Plotted: ' + wStr + dStr + bearingSign + bearing + '° — Auto Navigating', 'ok');
+    }).catch(function(){});
+}
+
+function clearDestinationPin(e) {
+  if (e) e.stopPropagation();
+  updateCameraTargetPinUI(null);
+  fetch('/api/auto/target_pin', {method: 'DELETE'})
+    .then(function(){
+      setMsg('Destination Pin Cleared', 'ok');
+    }).catch(function(){});
+}
+
 /* ── CAMERA STREAM ──────────────────────────────────── */
 (function(){
   var img = document.getElementById('cam');
   if (!img) return;
 
-  var reconnectTimer = null;
-  var usePolling = false;
-  var pollBusy = false;
-  var loader = new Image();
+  // Click / Tap to set destination target
+  img.addEventListener('click', function(e) {
+    var rect = img.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    var normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    var normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    var px = Math.round(normX * 640);
+    var py = Math.round(normY * 480);
+    setDestinationPin(px, py);
+  });
 
-  function scheduleReconnect() {
-    if (reconnectTimer || usePolling) return;
-    reconnectTimer = setTimeout(function(){
-      reconnectTimer = null;
-      img.src = '/video_feed?t=' + Date.now();
-    }, 1200);
+  var timer = null;
+  var requestInFlight = false;
+  var currentUrl = null;
+  var frameUrl = '/api/frame';
+
+  function showFrame(blob) {
+    var nextUrl = URL.createObjectURL(blob);
+    var oldUrl = currentUrl;
+    img.onload = function() {
+      if (oldUrl) URL.revokeObjectURL(oldUrl);
+    };
+    currentUrl = nextUrl;
+    img.src = nextUrl;
   }
 
-  img.onerror = function() {
-    if (!usePolling) {
-      scheduleReconnect();
-    }
+  function pollFrame() {
+    if (requestInFlight) return;
+    requestInFlight = true;
+    fetch(frameUrl + '?t=' + Date.now(), {
+      cache: 'no-store',
+      headers: {'Cache-Control': 'no-cache'}
+    })
+      .then(function(response) {
+        if (!response.ok) throw new Error('frame HTTP ' + response.status);
+        return response.blob();
+      })
+      .then(showFrame)
+      .catch(function() {
+        img.alt = 'camera reconnecting';
+      })
+      .finally(function() {
+        requestInFlight = false;
+        clearTimeout(timer);
+        timer = setTimeout(pollFrame, 120);
+      });
   };
 
-  var watchdog = setTimeout(function(){
-    if (!img.naturalWidth || img.naturalWidth === 0) {
-      usePolling = true;
-      startPolling();
-    }
-  }, 3000);
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) pollFrame();
+  });
 
-  img.onload = function() {
-    clearTimeout(watchdog);
-  };
-
-  function startPolling() {
-    loader.onload = function() {
-      img.src = loader.src;
-      pollBusy = false;
-    };
-    loader.onerror = function() {
-      pollBusy = false;
-    };
-    setInterval(function(){
-      if (pollBusy) return;
-      pollBusy = true;
-      loader.src = '/api/frame?_=' + Date.now();
-    }, 50);
-  }
+  pollFrame();
 }());
 
 /* ── SERVO ───────────────────────────────────────────── */
-function setServo(v){
+function updateServoUI(v){
   v=Math.round(Math.max(0, Math.min(180, +v)));
   var sd=document.getElementById('sdeg'); if(sd)sd.textContent=v;
   var sdm=document.getElementById('sdeg-m'); if(sdm)sdm.textContent=v;
@@ -1222,9 +2338,22 @@ function setServo(v){
   var slm=document.getElementById('sl-m');
   if(slm){slm.value=v;slm.style.setProperty('--pct',(v/180*100)+'%');}
   _arc(v);
+}
+
+function setServo(v){
+  v=Math.round(Math.max(0, Math.min(180, +v)));
+  updateServoUI(v);
+  if (window.spatialMapState) {
+    spatialMapState.servoAngle = v;
+    if (typeof updateSpatialHUD === 'function') updateSpatialHUD();
+  }
   fetch('/api/servo',{method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({angle:v})});
+    body:JSON.stringify({angle:v})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d && d.target_pin) updateCameraTargetPinUI(d.target_pin);
+    }).catch(function(){});
 }
 function _arc(d){
   var off=85-(d/180)*85;
@@ -1265,18 +2394,47 @@ function setStatus(st){
 
 /* ── D-PAD ───────────────────────────────────────────── */
 var _dt=null;
+var _motorBusy=false;
+var _motorPending=null;
+var _joyBusy=false;
+var _joyPending=null;
+
+function _dispatchMotorCommand(c){
+  _motorBusy=true;
+  fetch('/api/motor/'+c,{method:'POST'})
+    .then(function(r){
+      return r.json().then(function(d){
+        if (!r.ok || d.status === 'error') {
+          setMsg(d.message || 'Motor command rejected', 'error');
+          return;
+        }
+        setStatus(d.motor_state || 'STOPPED');
+      });
+    })
+    .catch(function(){setMsg('Motor command failed: dashboard is unreachable', 'error');})
+    .finally(function(){
+      _motorBusy=false;
+      if(_motorPending!==null){
+        var next=_motorPending;
+        _motorPending=null;
+        _dispatchMotorCommand(next);
+      }
+    });
+}
+
 function hold(c){
   motor(c);clearInterval(_dt);
-  _dt=setInterval(function(){motor(c);},90);
+  _dt=setInterval(function(){motor(c);},75);
 }
 function rel(){
   clearInterval(_dt);_dt=null;motor('stop');
 }
 function motor(c){
-  fetch('/api/motor/'+c,{method:'POST'})
-    .then(function(r){return r.json();})
-    .then(function(d){setStatus(d.motor_state);})
-    .catch(function(){});
+  _motorPending=c;
+  if(_motorBusy) return;
+  var next=_motorPending;
+  _motorPending=null;
+  _dispatchMotorCommand(next);
 }
 
 /* ── PROPORTIONAL JOYSTICK ───────────────────────────── */
@@ -1334,75 +2492,174 @@ function motor(c){
   }
 
   function sendJoy(){
+    _joyPending={x:nx,y:ny};
+    if(_joyBusy) return;
+    _sendJoyLatest();
+  }
+
+  function _sendJoyLatest(){
+    if(!_joyPending) return;
+    var payload=_joyPending;
+    _joyPending=null;
+    _joyBusy=true;
     fetch('/api/joystick',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({x:nx,y:ny})})
-    .then(function(r){return r.json();})
-    .then(function(d){setStatus(d.motor_state);})
-    .catch(function(){});
+      body:JSON.stringify(payload)})
+    .then(function(r){
+      return r.json().then(function(d){
+        if (!r.ok || d.status === 'error') {
+          setMsg(d.message || 'Joystick command rejected', 'error');
+          return;
+        }
+        if (d.motor_state) setStatus(d.motor_state);
+      });
+    })
+    .catch(function(){})
+    .finally(function(){
+      _joyBusy=false;
+      if(_joyPending) _sendJoyLatest();
+    });
+  }
+
+  /* ── BROWSER GAMEPAD SUPPORT ─────────────────────────────────────
+     Default manual input: left stick X = steering, left stick Y = throttle.
+     Button 0 (A/Cross) is a dead-man stop. A connected gamepad never enables AI.
+  */
+  var gamepadState = { index: null, lastSent: 0, deadman: false };
+  var gamepadLoopStarted = false;
+
+  window.addEventListener('gamepadconnected', function(e) {
+    gamepadState.index = e.gamepad.index;
+    setControlMode('manual');
+    setStatus('GAMEPAD CONNECTED');
+  });
+  window.addEventListener('gamepaddisconnected', function(e) {
+    if (gamepadState.index === e.gamepad.index) {
+      gamepadState.index = null;
+      fetch('/api/motor/stop', {method:'POST'}).catch(function(){});
+      setStatus('GAMEPAD DISCONNECTED');
+    }
+  });
+
+  function pollGamepad() {
+    var pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    var pad = gamepadState.index !== null ? pads[gamepadState.index] : null;
+    if (!pad) {
+      for (var i = 0; i < pads.length; i++) {
+        if (pads[i]) { pad = pads[i]; gamepadState.index = i; break; }
+      }
+    }
+    if (pad) {
+      var x = Math.abs(pad.axes[0] || 0) < 0.08 ? 0 : (pad.axes[0] || 0);
+      var yAxis = pad.axes.length > 1 ? (pad.axes[1] || 0) : 0;
+      var y = Math.abs(yAxis) < 0.08 ? 0 : -yAxis;
+      var stop = !!(pad.buttons[0] && pad.buttons[0].pressed);
+      var activeInput = stop || Math.abs(x) > 0 || Math.abs(y) > 0;
+      // An active stick/button is allowed to take over from AI. Neutral
+      // polling while AI is selected must not silently cancel an AI task.
+      if (autoDrivingState.enabled === false || activeInput) {
+        if (stop) { x = 0; y = 0; }
+        var now = Date.now();
+        if (now - gamepadState.lastSent >= 70) {
+          gamepadState.lastSent = now;
+          _joyPending={x:x,y:y};
+          if(!_joyBusy) _sendJoyLatest();
+        }
+      }
+    }
+    requestAnimationFrame(pollGamepad);
+  }
+  if (navigator.getGamepads) {
+    gamepadLoopStarted = true;
+    requestAnimationFrame(pollGamepad);
   }
 
   function draw(){
     ctx.clearRect(0,0,SZ,SZ);
     var mag=Math.hypot(nx,ny),on=pid!==null;
 
-    // Minimalist Pure White Base Track
-    ctx.shadowColor='rgba(0,0,0,0.06)';
-    ctx.shadowBlur=16;
-    ctx.beginPath();ctx.arc(CX,CY,OR,0,Math.PI*2);
-    ctx.fillStyle='#FFFFFF';ctx.fill();
-    ctx.shadowBlur=0;
+    // Tactical Cybernetic Dark Base Track
+    var bgGrad = ctx.createRadialGradient(CX, CY, 10, CX, CY, OR);
+    bgGrad.addColorStop(0, '#171815');
+    bgGrad.addColorStop(0.75, '#0B0F19');
+    bgGrad.addColorStop(1, '#070A11');
+    ctx.beginPath(); ctx.arc(CX, CY, OR, 0, Math.PI * 2);
+    ctx.fillStyle = bgGrad; ctx.fill();
 
-    // Outer Track Ring Border
-    ctx.beginPath();ctx.arc(CX,CY,OR,0,Math.PI*2);
-    ctx.strokeStyle=on?'#1C1C1E':'#E5E5EA';
-    ctx.lineWidth=on?2.5:1.5;ctx.stroke();
+    // Outer Track Ring Border with Glowing Accent
+    ctx.beginPath(); ctx.arc(CX, CY, OR, 0, Math.PI * 2);
+    ctx.strokeStyle = on ? 'rgba(198, 241, 53, 0.75)' : 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = on ? 2.5 : 1.5;
+    ctx.shadowColor = on ? '#C6F135' : 'transparent';
+    ctx.shadowBlur = on ? 12 : 0;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
 
-    // Subtle Cardinal Tick Marks
-    ctx.strokeStyle='rgba(0,0,0,0.08)';ctx.lineWidth=1;
-    for(var i=0;i<8;i++){
-      var a=i*Math.PI/4;
-      var ix=CX+Math.cos(a)*(OR-10),iy=CY+Math.sin(a)*(OR-10);
-      var ox=CX+Math.cos(a)*(OR-3),oy=CY+Math.sin(a)*(OR-3);
-      ctx.beginPath();ctx.moveTo(ix,iy);ctx.lineTo(ox,oy);ctx.stroke();
+    // Concentric Metric Deflection Rings (33% and 66%)
+    [0.35, 0.70].forEach(function(rPct){
+      ctx.beginPath(); ctx.arc(CX, CY, MAX * rPct, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(198, 241, 53, 0.08)';
+      ctx.setLineDash([3, 4]); ctx.lineWidth = 1; ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Cardinal Tick Marks in Luminous Cyan
+    ctx.strokeStyle = on ? 'rgba(198, 241, 53, 0.5)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1.5;
+    for(var i=0; i<8; i++){
+      var a = i * Math.PI / 4;
+      var ix = CX + Math.cos(a) * (OR - 10), iy = CY + Math.sin(a) * (OR - 10);
+      var ox = CX + Math.cos(a) * (OR - 3),  oy = CY + Math.sin(a) * (OR - 3);
+      ctx.beginPath(); ctx.moveTo(ix, iy); ctx.lineTo(ox, oy); ctx.stroke();
     }
 
     // Cross-hair Center Guidelines
-    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'; ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(CX-OR+10,CY);ctx.lineTo(CX+OR-10,CY);
-    ctx.moveTo(CX,CY-OR+10);ctx.lineTo(CX,CY+OR-10);
+    ctx.moveTo(CX - OR + 12, CY); ctx.lineTo(CX + OR - 12, CY);
+    ctx.moveTo(CX, CY - OR + 12); ctx.lineTo(CX, CY + OR - 12);
     ctx.stroke();
 
-    // Vector Motion Line
-    if(mag>0.04){
-      ctx.beginPath();ctx.moveTo(CX,CY);ctx.lineTo(kx,ky);
-      ctx.strokeStyle='#1C1C1E';
-      ctx.lineWidth=2.5;ctx.stroke();
+    // Vector Motion Beam from Center to Thumb
+    if(mag > 0.04){
+      ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(kx, ky);
+      ctx.strokeStyle = on ? '#C6F135' : 'rgba(198, 241, 53, 0.4)';
+      ctx.lineWidth = on ? 3 : 2;
+      ctx.shadowColor = '#C6F135'; ctx.shadowBlur = on ? 8 : 2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
 
-    // Floating 3D Metallic Thumbstick Knob
-    ctx.shadowColor='rgba(0,0,0,0.18)';
-    ctx.shadowBlur=on?14:6;
+    // Floating 3D Cyber Thumbstick Knob
+    ctx.shadowColor = on ? 'rgba(198, 241, 53, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = on ? 16 : 8;
 
-    var kg=ctx.createRadialGradient(kx-8,ky-8,2,kx,ky,KR);
-    kg.addColorStop(0,'#FFFFFF');
-    kg.addColorStop(1,'#E5E5EA');
+    var kg = ctx.createRadialGradient(kx - 6, ky - 6, 2, kx, ky, KR);
+    kg.addColorStop(0, on ? '#3A3F33' : '#2A2D26');
+    kg.addColorStop(0.7, '#1A1C19');
+    kg.addColorStop(1, '#0C121D');
 
-    ctx.beginPath();ctx.arc(kx,ky,KR,0,Math.PI*2);
-    ctx.fillStyle=kg;ctx.fill();
-    ctx.shadowBlur=0;
-    ctx.strokeStyle='#1C1C1E';
-    ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath(); ctx.arc(kx, ky, KR, 0, Math.PI * 2);
+    ctx.fillStyle = kg; ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Knob Rim Accent
+    ctx.beginPath(); ctx.arc(kx, ky, KR, 0, Math.PI * 2);
+    ctx.strokeStyle = on ? '#C6F135' : 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = on ? 2.5 : 1.5; ctx.stroke();
 
     // Center Pip Indicator
-    ctx.beginPath();ctx.arc(kx,ky,5,0,Math.PI*2);
-    ctx.fillStyle='#1C1C1E';ctx.fill();
+    ctx.beginPath(); ctx.arc(kx, ky, 6, 0, Math.PI * 2);
+    ctx.fillStyle = on ? '#C6F135' : 'rgba(255, 255, 255, 0.6)';
+    ctx.shadowColor = on ? '#C6F135' : 'transparent';
+    ctx.shadowBlur = on ? 10 : 0;
+    ctx.fill();
+    ctx.shadowBlur = 0;
   }
 
   /* ── KEYBOARD WASD & ARROW CONTROLS ───────────────── */
   var keys = { w: false, a: false, s: false, d: false };
-  var usingKey = false;
+  var keyHoldInterval = null;
 
   function updateKeyDrive() {
     var dy = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
@@ -1421,23 +2678,72 @@ function motor(c){
     if (pid !== null) return; // Touch/mouse pointer has priority if active
 
     if (dx === 0 && dy === 0) {
-      if (usingKey) {
-        usingKey = false;
-        tx = CX;
-        ty = CY;
-        la = 0; // force immediate dispatch in frame()
+      if (keyHoldInterval) {
+        clearInterval(keyHoldInterval);
+        keyHoldInterval = null;
       }
+      // Instant snap to center and immediate stop command
+      tx = CX; ty = CY; kx = CX; ky = CY;
+      nx = 0; ny = 0;
+      draw();
+      fetch('/api/motor/stop', {method: 'POST'})
+        .then(function(res){ return res.json(); })
+        .then(function(d){ setStatus(d.motor_state || 'STOPPED'); })
+        .catch(function(){});
       return;
     }
 
-    usingKey = true;
     var dist = Math.hypot(dx, dy);
     var targetX = (dx / dist) * MAX;
     var targetY = -(dy / dist) * MAX; // Screen Y is inverted relative to vehicle throttle
 
     tx = CX + targetX;
     ty = CY + targetY;
-    la = 0; // force immediate dispatch in frame()
+    kx = tx;
+    ky = ty;
+    nx = Number((dx / dist).toFixed(2));
+    ny = Number((dy / dist).toFixed(2));
+    draw();
+
+    function dispatchKeyJoy() {
+      var command = null;
+      if (dx === 0 && dy > 0) command = 'forward';
+      else if (dx === 0 && dy < 0) command = 'backward';
+      else if (dx < 0 && dy === 0) command = 'left';
+      else if (dx > 0 && dy === 0) command = 'right';
+
+      if (command) {
+        motor(command);
+        return;
+      }
+
+      fetch('/api/joystick', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({x: nx, y: ny})
+      })
+      .then(function(res){
+        return res.json().then(function(d){
+          if (!res.ok || d.status === 'error') {
+            setMsg(d.message || 'Joystick command rejected', 'error');
+            return;
+          }
+          setStatus(d.motor_state || 'STOPPED');
+        });
+      })
+      .catch(function(){setMsg('Joystick command failed: dashboard is unreachable', 'error');});
+    }
+
+    dispatchKeyJoy();
+    if (keyHoldInterval) clearInterval(keyHoldInterval);
+    keyHoldInterval = setInterval(function() {
+      if (keys.w || keys.a || keys.s || keys.d) {
+        dispatchKeyJoy();
+      } else {
+        clearInterval(keyHoldInterval);
+        keyHoldInterval = null;
+      }
+    }, 80);
   }
 
   window.addEventListener('keydown', function(e) {
@@ -1453,16 +2759,19 @@ function motor(c){
     else if (k === 'd' || e.key === 'ArrowRight') { keys.d = true; matched = true; }
     else if (e.code === 'Space' || k === 'x') {
       keys.w = keys.a = keys.s = keys.d = false;
-      usingKey = false;
+      if (keyHoldInterval) { clearInterval(keyHoldInterval); keyHoldInterval = null; }
       tx = CX; ty = CY; kx = CX; ky = CY;
       nx = 0; ny = 0;
+      draw();
       var stp = document.getElementById('dpad-stop');
       if (stp) {
         stp.classList.add('active');
         setTimeout(function(){ stp.classList.remove('active'); }, 180);
       }
-      sendJoy();
-      rel();
+      fetch('/api/motor/stop', {method: 'POST'})
+        .then(function(res){ return res.json(); })
+        .then(function(d){ setStatus(d.motor_state || 'STOPPED'); })
+        .catch(function(){});
       matched = true;
     }
     else if (k === 'q') {
@@ -1514,9 +2823,29 @@ setInterval(function(){
   fetch('/api/telemetry')
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.servo_angle!=null)setServo(Math.round(d.servo_angle));
+      if(d.servo_angle!=null)updateServoUI(Math.round(d.servo_angle));
       if(d.status)setStatus(d.status);
       if(d.trim_offset!=null)updateTrimDisplay(d.trim_offset);
+
+      // Pi 4 CPU Temperature
+      var cpuEl = document.getElementById('cpu-temp');
+      if(cpuEl && d.cpu_temp) {
+        cpuEl.textContent = d.cpu_temp.toFixed(1) + '°C';
+        if(d.cpu_temp > 75) cpuEl.style.color = 'var(--red)';
+        else if(d.cpu_temp > 68) cpuEl.style.color = '#FF9500';
+        else cpuEl.style.color = 'var(--txt2)';
+      }
+
+      // Sync Destination Pin from backend if active
+      if(d.target_pin !== undefined) {
+        updateCameraTargetPinUI(d.target_pin);
+      }
+
+      // Sync Live Ultrasonic Sensor (HC-SR04)
+      if(d.front_distance_cm !== undefined) {
+        updateUltrasonicUI(d.front_distance_cm);
+      }
+
       var btPill=document.getElementById('bt-pill');
       var btTxt=document.getElementById('bt-txt');
       if(d.bluetooth_connected){
@@ -1547,6 +2876,91 @@ function showBtInfo(){
     });
 }
 
+/* ── ULTRASONIC SENSOR (HC-SR04) LIVE UI SYNC ──────────── */
+function updateUltrasonicUI(distCm) {
+  var sonarPill = document.getElementById('sonar-pill');
+  var sonarTxt = document.getElementById('sonar-txt');
+  var camBadge = document.getElementById('cam-sonar-badge');
+  var camTxt = document.getElementById('cam-sonar-txt');
+  var hudVal = document.getElementById('hud-sonar-val');
+  var autoBadge = document.getElementById('auto-sonar-badge');
+  var distLarge = document.getElementById('sonar-dist-large');
+  var statusBadge = document.getElementById('sonar-status-badge');
+  var meterBar = document.getElementById('sonar-meter-bar');
+
+  if (distCm == null || distCm < 0) {
+    if (sonarTxt) sonarTxt.textContent = 'SONAR: --';
+    if (camTxt) camTxt.textContent = 'HC-SR04: --';
+    if (hudVal) hudVal.textContent = '-- cm';
+    if (autoBadge) { autoBadge.textContent = 'SONAR: -- cm'; autoBadge.style.color = '#8E8E93'; }
+    if (distLarge) { distLarge.textContent = '--'; distLarge.style.color = '#8E8E93'; }
+    if (statusBadge) {
+      statusBadge.textContent = 'OFFLINE';
+      statusBadge.style.background = 'rgba(142,142,147,.15)';
+      statusBadge.style.color = '#8E8E93';
+      statusBadge.style.borderColor = 'rgba(142,142,147,.3)';
+    }
+    if (meterBar) { meterBar.style.width = '0%'; meterBar.style.background = '#8E8E93'; }
+    return;
+  }
+
+  var dFormatted = distCm.toFixed(1);
+  var statusText = 'CLEAR';
+  var statusColor = '#34C759'; // green
+  var bgAlpha = 'rgba(52,199,89,.15)';
+  var borderAlpha = 'rgba(52,199,89,.3)';
+
+  if (distCm <= 12.0) {
+    statusText = 'COLLISION / REVERSE';
+    statusColor = '#FF4D3D'; // red
+    bgAlpha = 'rgba(255,59,48,.18)';
+    borderAlpha = 'rgba(255,59,48,.4)';
+  } else if (distCm <= 20.0) {
+    statusText = 'EMERGENCY STOP';
+    statusColor = '#FF4D3D';
+    bgAlpha = 'rgba(255,59,48,.18)';
+    borderAlpha = 'rgba(255,59,48,.4)';
+  } else if (distCm <= 35.0) {
+    statusText = 'OBSTACLE DETECTED';
+    statusColor = '#FF9500'; // orange
+    bgAlpha = 'rgba(255,149,0,.15)';
+    borderAlpha = 'rgba(255,149,0,.35)';
+  }
+
+  if (sonarTxt) sonarTxt.textContent = 'SONAR: ' + dFormatted + 'cm';
+  if (sonarPill) {
+    sonarPill.style.color = statusColor;
+    sonarPill.style.borderColor = borderAlpha;
+  }
+  if (camBadge) {
+    camBadge.style.background = (distCm <= 20.0) ? 'rgba(255,59,48,.85)' : ((distCm <= 35.0) ? 'rgba(255,149,0,.85)' : 'rgba(0,122,255,.75)');
+  }
+  if (camTxt) camTxt.textContent = 'HC-SR04: ' + dFormatted + 'cm';
+  if (hudVal) {
+    hudVal.textContent = dFormatted + ' cm';
+    hudVal.style.color = statusColor;
+  }
+  if (autoBadge) {
+    autoBadge.textContent = 'SONAR: ' + dFormatted + ' cm';
+    autoBadge.style.color = statusColor;
+  }
+  if (distLarge) {
+    distLarge.textContent = dFormatted;
+    distLarge.style.color = statusColor;
+  }
+  if (statusBadge) {
+    statusBadge.textContent = statusText;
+    statusBadge.style.background = bgAlpha;
+    statusBadge.style.color = statusColor;
+    statusBadge.style.borderColor = borderAlpha;
+  }
+  if (meterBar) {
+    var pct = Math.min(100, Math.max(5, (distCm / 100.0) * 100));
+    meterBar.style.width = pct + '%';
+    meterBar.style.background = statusColor;
+  }
+}
+
 /* ── MOTOR DIRECTION CALIBRATION & TESTING ──────────── */
 function flipMotor(side){
   fetch('/api/motor/invert/' + side, {method: 'POST'})
@@ -1563,6 +2977,31 @@ function testMotor(action){
     .then(function(){
       setMsg('Testing ' + action.replace('_', ' ') + '...', 'ok');
     }).catch(function(){});
+}
+
+function testDriverChannel(action){
+  var result = document.getElementById('driver-test-result');
+  if (result) result.textContent = 'Testing ' + action.replace('_', ' ') + ' for 0.8 seconds...';
+  fetch('/api/motor/test/' + action, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({duration:0.8, speed:70})
+  }).then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+    .then(function(reply){
+      var d = reply.data;
+      if (!reply.ok || d.status === 'error') {
+        if (result) result.textContent = d.message || 'Diagnostic failed';
+        setMsg('\u2715 ' + (d.message || 'Diagnostic failed'));
+        return;
+      }
+      var pins = d.diagnostic.pins;
+      var active = Object.keys(pins).filter(function(pin){return pins[pin] > 0;});
+      if (result) result.textContent = d.diagnostic.label + ' | active GPIO: ' + active.join(', ') + ' | auto-stop';
+      setMsg('\u2713 ' + d.diagnostic.label, 'ok');
+    }).catch(function(){
+      if (result) result.textContent = 'No response from motor diagnostic endpoint';
+      setMsg('\u2715 Diagnostic request failed');
+    });
 }
 
 function updateMotorBadge(cfg){
@@ -1687,6 +3126,542 @@ function loadGallery(){
     }).catch(function(){});
 }
 
+/* ── 3D SPATIAL WORLD MAP & ACTIVE VISION FRUSTUM RENDERER ── */
+var spatialMapState = {
+  carPose: { x: 0.0, y: 0.0, heading_deg: 90.0 },
+  servoAngle: 90.0,
+  target: null,
+  destinations: [],
+  obstacles: [],
+  gazeLocked: true,
+  scale: 1.05, // pixels per centimeter
+  canvas: null,
+  ctx: null,
+  clickRipples: []
+};
+
+function resizeSpatialCanvas() {
+  var cvs = document.getElementById('spatial-map-canvas');
+  if (!cvs) return;
+  var wrap = document.getElementById('spatial-canvas-wrap');
+  if (!wrap) return;
+  var dpr = window.devicePixelRatio || 1;
+  var w = wrap.clientWidth;
+  var h = wrap.clientHeight;
+  if (!w || !h) return;
+  cvs.width = w * dpr;
+  cvs.height = h * dpr;
+}
+
+function updateSpatialHUD() {
+  var cp = spatialMapState.carPose;
+  var sa = spatialMapState.servoAngle;
+  var tgt = spatialMapState.target;
+  var gaze = spatialMapState.gazeLocked;
+
+  var elPose = document.getElementById('hud-car-pose');
+  if (elPose) {
+    elPose.textContent = 'X: ' + cp.x.toFixed(1) + ' • Y: ' + cp.y.toFixed(1) + ' • ' + cp.heading_deg.toFixed(1) + '°';
+  }
+
+  var elServo = document.getElementById('hud-servo-angle');
+  if (elServo) {
+    var desc = 'Forward';
+    if (sa > 95) desc = 'Left ' + (sa - 90).toFixed(0) + '°';
+    else if (sa < 85) desc = 'Right ' + (90 - sa).toFixed(0) + '°';
+    elServo.textContent = sa.toFixed(1) + '° (' + desc + ')';
+  }
+
+  var badgeGaze = document.getElementById('gaze-lock-badge');
+  var btnGaze = document.getElementById('btn-toggle-gaze');
+  if (badgeGaze) {
+    badgeGaze.textContent = gaze ? ('GAZE: LOCKED (' + Math.round(sa) + '°)') : 'GAZE: MANUAL (90°)';
+    badgeGaze.style.color = gaze ? '#007AFF' : 'var(--txt2)';
+    badgeGaze.style.background = gaze ? 'rgba(0,122,255,.1)' : 'rgba(0,0,0,.06)';
+  }
+  if (btnGaze) {
+    btnGaze.classList.toggle('active', gaze);
+    btnGaze.textContent = gaze ? 'Lock Gaze: ON' : 'Lock Gaze: OFF';
+  }
+
+  var elTgtPill = document.getElementById('hud-target-pill');
+  var elTgtInfo = document.getElementById('hud-target-info');
+  if (elTgtPill && elTgtInfo) {
+    if (tgt && tgt.world_x != null) {
+      elTgtInfo.textContent = 'X: ' + Math.round(tgt.world_x) + ' • Y: ' + Math.round(tgt.world_y) + ' (' + Math.round(tgt.dist_cm || 0) + 'cm)';
+      elTgtPill.style.display = 'flex';
+    } else {
+      elTgtPill.style.display = 'none';
+    }
+  }
+}
+
+function plot3DWorldTarget(wx, wy) {
+  fetch('/api/auto/target_3d', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({x: wx, y: wy})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.status === 'success') {
+      if (d.destinations) {
+        autoDrivingState.destinations = d.destinations;
+        spatialMapState.destinations = d.destinations.waypoints || [];
+      }
+      if (d.target_pin) {
+        spatialMapState.target = d.target_pin;
+        updateCameraTargetPinUI(d.target_pin);
+      }
+      setMsg('Point ' + spatialMapState.destinations.length + ' added at (' + wx + ', ' + wy + ') cm — select AI when ready', 'ok');
+      updateAutoUI();
+      updateSpatialHUD();
+    }
+  })
+  .catch(function(){});
+}
+
+function toggleGazeTracking() {
+  var nextVal = !spatialMapState.gazeLocked;
+  fetch('/api/auto/gaze_tracking', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({enabled: nextVal})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    spatialMapState.gazeLocked = !!d.active_gaze_tracking;
+    updateSpatialHUD();
+    setMsg(spatialMapState.gazeLocked ? 'Active Gaze Servoing: LOCKED' : 'Active Gaze Servoing: DISENGAGED', 'ok');
+  })
+  .catch(function(){});
+}
+
+function resetCarPose() {
+  fetch('/api/auto/pose', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({x: 0, y: 0, heading_deg: 90})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(){
+    spatialMapState.carPose = {x: 0, y: 0, heading_deg: 90};
+    setMsg('Odometry Pose Reset to (0,0) 90°', 'ok');
+    updateSpatialHUD();
+  })
+  .catch(function(){});
+}
+
+function clear3DTarget() {
+  clearDestinationPin();
+  spatialMapState.target = null;
+  spatialMapState.destinations = [];
+  updateSpatialHUD();
+}
+
+function clearMapRoute(e) {
+  if (e) e.stopPropagation();
+  fetch('/api/auto/destinations', {method: 'DELETE'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      autoDrivingState.destinations = d.destinations || {waypoints: [], active: null};
+      spatialMapState.destinations = [];
+      spatialMapState.target = null;
+      updateSpatialHUD();
+      updateAutoUI();
+      setMsg('Map route cleared', 'ok');
+    })
+    .catch(function(){setMsg('Could not clear map route', 'warn');});
+}
+
+function initSpatialMap() {
+  var cvs = document.getElementById('spatial-map-canvas');
+  if (!cvs) return;
+  spatialMapState.canvas = cvs;
+  spatialMapState.ctx = cvs.getContext('2d');
+  resizeSpatialCanvas();
+  window.addEventListener('resize', resizeSpatialCanvas);
+
+  cvs.addEventListener('click', function(e) {
+    var rect = cvs.getBoundingClientRect();
+    var clickX = (e.clientX - rect.left);
+    var clickY = (e.clientY - rect.top);
+
+    var w = rect.width;
+    var h = rect.height;
+    var cx = w / 2;
+    var cy = h * 0.72; // Car anchor baseline
+
+    var scale = spatialMapState.scale;
+    var relX = (clickX - cx) / scale;
+    var relY = (cy - clickY) / scale;
+
+    var cp = spatialMapState.carPose;
+    var rad = (cp.heading_deg * Math.PI) / 180.0;
+    var worldX = cp.x + (relY * Math.cos(rad)) + (relX * Math.sin(rad));
+    var worldY = cp.y + (relY * Math.sin(rad)) - (relX * Math.cos(rad));
+
+    worldX = Math.round(worldX);
+    worldY = Math.round(worldY);
+
+    spatialMapState.clickRipples.push({
+      worldX: worldX,
+      worldY: worldY,
+      radius: 4,
+      maxRadius: 32,
+      alpha: 1.0
+    });
+
+    plot3DWorldTarget(worldX, worldY);
+  });
+
+  requestAnimationFrame(drawSpatialMapLoop);
+}
+
+function drawSpatialMapLoop() {
+  var cvs = spatialMapState.canvas;
+  var ctx = spatialMapState.ctx;
+  if (!cvs || !ctx) return;
+
+  var dpr = window.devicePixelRatio || 1;
+  var w = cvs.width / dpr;
+  var h = cvs.height / dpr;
+
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Background
+  ctx.fillStyle = '#141416';
+  ctx.fillRect(0, 0, w, h);
+
+  var cx = w / 2;
+  var cy = h * 0.72;
+  var scale = spatialMapState.scale;
+  var cp = spatialMapState.carPose;
+
+  // Ground Grid (Metric 25cm minor, 100cm major)
+  ctx.lineWidth = 1;
+  for (var gx = -300; gx <= 300; gx += 25) {
+    var sx = cx + gx * scale;
+    if (sx < 0 || sx > w) continue;
+    var isMajor = (gx % 100 === 0);
+    ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, h);
+    ctx.stroke();
+
+    if (isMajor && gx !== 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '8px -apple-system, system-ui, sans-serif';
+      ctx.fillText((gx > 0 ? '+' : '') + (gx / 100) + 'm', sx + 3, h - 8);
+    }
+  }
+
+  for (var gy = -100; gy <= 400; gy += 25) {
+    var sy = cy - gy * scale;
+    if (sy < 0 || sy > h) continue;
+    var isMajor = (gy % 100 === 0);
+    ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(w, sy);
+    ctx.stroke();
+
+    if (isMajor && gy !== 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '8px -apple-system, system-ui, sans-serif';
+      ctx.fillText('+' + (gy / 100) + 'm', 8, sy - 3);
+    }
+  }
+
+  // Concentric Metric Distance Rings
+  [50, 100, 150, 200, 250].forEach(function(rCm) {
+    var rPx = rCm * scale;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,122,255,0.07)';
+    ctx.setLineDash([4, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(0,122,255,0.3)';
+    ctx.font = '8px -apple-system, system-ui, sans-serif';
+    ctx.fillText(rCm + 'cm', cx + rPx * 0.707 + 2, cy - rPx * 0.707 - 2);
+  });
+
+  // World Origin Axis Lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 260); ctx.lineTo(cx, cy + 80);
+  ctx.moveTo(cx - 260, cy); ctx.lineTo(cx + 260, cy);
+  ctx.stroke();
+
+  // Helper: World (wx, wy) -> Screen (sx, sy) relative to vehicle
+  function worldToScreen(wx, wy) {
+    var dx = wx - cp.x;
+    var dy = wy - cp.y;
+    var rad = (cp.heading_deg * Math.PI) / 180.0;
+    // Relative to car heading (car heading points UP on screen)
+    var Y_rel = (dx * Math.cos(rad)) + (dy * Math.sin(rad));
+    var X_rel = (dx * Math.sin(rad)) - (dy * Math.cos(rad));
+    var sx = cx + (X_rel * scale);
+    var sy = cy - (Y_rel * scale);
+    return { x: sx, y: sy, relFwd: Y_rel, relLat: X_rel };
+  }
+
+  // Render the ordered map route. The first un-reached point is the active
+  // target; later points remain visible so the operator can plan the route
+  // directly on the map without entering centimeter values.
+  var routePoints = spatialMapState.destinations || [];
+  if (routePoints.length) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    routePoints.forEach(function(wp) {
+      var rp = worldToScreen(wp.x, wp.y);
+      ctx.lineTo(rp.x, rp.y);
+    });
+    ctx.strokeStyle = 'rgba(0,122,255,0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    var activeRoutePoint = (autoDrivingState.destinations || {}).active;
+    var activeRouteId = activeRoutePoint ? activeRoutePoint.id : null;
+    routePoints.forEach(function(wp, index) {
+      var rp = worldToScreen(wp.x, wp.y);
+      var isActive = activeRouteId != null && wp.id === activeRouteId;
+      var color = wp.reached ? '#34C759' : (isActive ? '#FF9500' : '#007AFF');
+      ctx.beginPath();
+      ctx.arc(rp.x, rp.y, isActive ? 8 : 6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 9px -apple-system, system-ui, sans-serif';
+      ctx.fillText('P' + (index + 1), rp.x + 9, rp.y + 3);
+    });
+  }
+
+  // Render Trajectory Vector & Fixed 3D Target Beacon
+  var tgt = spatialMapState.target;
+  if (tgt && tgt.world_x != null) {
+    var tp = worldToScreen(tgt.world_x, tgt.world_y);
+
+    // Trajectory dashed vector from car front to target
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 14 * scale);
+    ctx.lineTo(tp.x, tp.y);
+    ctx.strokeStyle = '#FF9500';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Animated pulsing beacon ripple
+    var pulse = (Date.now() % 1600) / 1600;
+    var rRipple = 6 + pulse * 24;
+    ctx.beginPath();
+    ctx.arc(tp.x, tp.y, rRipple, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,149,0,' + (1 - pulse) * 0.7 + ')';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Solid Target Anchor Center
+    ctx.beginPath();
+    ctx.arc(tp.x, tp.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#FF9500';
+    ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Crosshairs
+    ctx.strokeStyle = '#FF9500';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tp.x - 10, tp.y); ctx.lineTo(tp.x + 10, tp.y);
+    ctx.moveTo(tp.x, tp.y - 10); ctx.lineTo(tp.x, tp.y + 10);
+    ctx.stroke();
+
+    // Target Tag
+    var tagDist = Math.round(tgt.dist_cm || Math.hypot(tp.relFwd, tp.relLat));
+    var tagText = '🎯 TARGET (' + Math.round(tgt.world_x) + ',' + Math.round(tgt.world_y) + ') • ' + tagDist + 'cm';
+    ctx.font = 'bold 9px -apple-system, system-ui, sans-serif';
+    var tw = ctx.measureText(tagText).width;
+    ctx.fillStyle = 'rgba(28,28,30,0.88)';
+    ctx.beginPath();
+    ctx.roundRect(tp.x - tw / 2 - 6, tp.y - 24, tw + 12, 16, 4);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,149,0,0.5)';
+    ctx.stroke();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(tagText, tp.x - tw / 2, tp.y - 13);
+  }
+
+  // Render 3D Obstacles
+  var obsList = spatialMapState.obstacles || [];
+  obsList.forEach(function(ob) {
+    if (ob.world_x == null || ob.world_y == null) return;
+    var op = worldToScreen(ob.world_x, ob.world_y);
+    if (op.x < -30 || op.x > w + 30 || op.y < -30 || op.y > h + 30) return;
+
+    // Obstacle Pill
+    ctx.fillStyle = 'rgba(255,59,48,0.25)';
+    ctx.strokeStyle = '#FF4D3D';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(op.x, op.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Label
+    var obTxt = (ob.class || 'OBSTACLE').toUpperCase() + ' (' + Math.round(ob.confidence * 100) + '%)';
+    ctx.font = 'bold 8px -apple-system, system-ui, sans-serif';
+    var ow = ctx.measureText(obTxt).width;
+    ctx.fillStyle = 'rgba(28,28,30,0.85)';
+    ctx.beginPath();
+    ctx.roundRect(op.x - ow / 2 - 4, op.y - 18, ow + 8, 13, 3);
+    ctx.fill();
+    ctx.fillStyle = '#FF4D3D';
+    ctx.fillText(obTxt, op.x - ow / 2, op.y - 9);
+  });
+
+  // Render Click Ripples
+  for (var i = spatialMapState.clickRipples.length - 1; i >= 0; i--) {
+    var rip = spatialMapState.clickRipples[i];
+    rip.radius += 1.5;
+    rip.alpha -= 0.04;
+    if (rip.alpha <= 0) {
+      spatialMapState.clickRipples.splice(i, 1);
+      continue;
+    }
+    var rp = worldToScreen(rip.worldX, rip.worldY);
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, rip.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,122,255,' + rip.alpha + ')';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Dynamic Camera Vision Frustum Cone (Projected from front bumper)
+  // Servo angle: 90° = Forward (relative to car); >90° = Left; <90° = Right
+  var sa = spatialMapState.servoAngle;
+  var panDeltaDeg = sa - 90.0; // In screen space, Left is -X (counter-clockwise)
+  var camAngleScreenRad = (-panDeltaDeg * Math.PI) / 180.0 - (Math.PI / 2);
+  var fovHalfRad = (31.1 * Math.PI) / 180.0;
+  var coneDistPx = 180 * scale;
+
+  var frontX = cx;
+  var frontY = cy - (11 * scale); // Front of vehicle
+
+  ctx.save();
+  var coneGrad = ctx.createRadialGradient(frontX, frontY, 4, frontX, frontY, coneDistPx);
+  coneGrad.addColorStop(0, 'rgba(0,122,255,0.36)');
+  coneGrad.addColorStop(0.5, 'rgba(0,122,255,0.12)');
+  coneGrad.addColorStop(1, 'rgba(0,122,255,0.01)');
+
+  ctx.beginPath();
+  ctx.moveTo(frontX, frontY);
+  ctx.arc(frontX, frontY, coneDistPx, camAngleScreenRad - fovHalfRad, camAngleScreenRad + fovHalfRad);
+  ctx.closePath();
+  ctx.fillStyle = coneGrad;
+  ctx.fill();
+
+  // Frustum Boundary Rays
+  ctx.strokeStyle = 'rgba(0,122,255,0.45)';
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(frontX, frontY);
+  ctx.lineTo(frontX + Math.cos(camAngleScreenRad - fovHalfRad) * coneDistPx, frontY + Math.sin(camAngleScreenRad - fovHalfRad) * coneDistPx);
+  ctx.moveTo(frontX, frontY);
+  ctx.lineTo(frontX + Math.cos(camAngleScreenRad + fovHalfRad) * coneDistPx, frontY + Math.sin(camAngleScreenRad + fovHalfRad) * coneDistPx);
+  ctx.stroke();
+
+  // Central Optical Gaze Ray
+  ctx.strokeStyle = 'rgba(0,122,255,0.85)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(frontX, frontY);
+  ctx.lineTo(frontX + Math.cos(camAngleScreenRad) * (coneDistPx * 0.9), frontY + Math.sin(camAngleScreenRad) * (coneDistPx * 0.9));
+  ctx.stroke();
+  ctx.restore();
+
+  // Render Vehicle Chassis at (cx, cy)
+  ctx.save();
+  var carW = 14 * scale;
+  var carL = 22 * scale;
+
+  // 4 Wheels
+  var wheelW = 4 * scale;
+  var wheelL = 7 * scale;
+  ctx.fillStyle = '#2C2C2E';
+  ctx.strokeStyle = '#3A3A3C';
+  ctx.lineWidth = 1;
+
+  // Front Left & Right wheels
+  ctx.fillRect(cx - (carW / 2) - wheelW + 1, cy - (carL / 2) + 2, wheelW, wheelL);
+  ctx.strokeRect(cx - (carW / 2) - wheelW + 1, cy - (carL / 2) + 2, wheelW, wheelL);
+  ctx.fillRect(cx + (carW / 2) - 1, cy - (carL / 2) + 2, wheelW, wheelL);
+  ctx.strokeRect(cx + (carW / 2) - 1, cy - (carL / 2) + 2, wheelW, wheelL);
+
+  // Rear Left & Right wheels
+  ctx.fillRect(cx - (carW / 2) - wheelW + 1, cy + (carL / 2) - wheelL - 2, wheelW, wheelL);
+  ctx.strokeRect(cx - (carW / 2) - wheelW + 1, cy + (carL / 2) - wheelL - 2, wheelW, wheelL);
+  ctx.fillRect(cx + (carW / 2) - 1, cy + (carL / 2) - wheelL - 2, wheelW, wheelL);
+  ctx.strokeRect(cx + (carW / 2) - 1, cy + (carL / 2) - wheelL - 2, wheelW, wheelL);
+
+  // Chassis Main Body
+  ctx.fillStyle = '#FFFFFF';
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.roundRect(cx - (carW / 2), cy - (carL / 2), carW, carL, 5);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#E5E5EA';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Front Hood Indicator (Electric Blue)
+  ctx.fillStyle = '#007AFF';
+  ctx.beginPath();
+  ctx.roundRect(cx - (carW / 2) + 3, cy - (carL / 2) + 2, carW - 6, 4, 2);
+  ctx.fill();
+
+  // Camera Mount Servo Pip
+  ctx.fillStyle = '#1C1C1E';
+  ctx.beginPath();
+  ctx.arc(frontX, frontY + 3, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Vehicle Center Origin Marker
+  ctx.fillStyle = '#FF4D3D';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Forward Heading Direction Vector Arrow
+  ctx.strokeStyle = '#007AFF';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - (carL / 2));
+  ctx.lineTo(cx, cy - (carL / 2) - 16);
+  ctx.lineTo(cx - 3, cy - (carL / 2) - 12);
+  ctx.moveTo(cx, cy - (carL / 2) - 16);
+  ctx.lineTo(cx + 3, cy - (carL / 2) - 12);
+  ctx.stroke();
+
+  ctx.restore();
+
+  ctx.restore();
+  requestAnimationFrame(drawSpatialMapLoop);
+}
+
 /* ── AUTONOMOUS DRIVING & AI PERCEPTION CONTROLLER ── */
 var autoDrivingState = {
   enabled: false,
@@ -1699,7 +3674,8 @@ var autoDrivingState = {
   fps: 0.0,
   server_connected: false,
   server_latency: 0,
-  overlay_enabled: true
+  overlay_enabled: true,
+  destinations: {waypoints: [], active: null}
 };
 
 function pollAutoStatus(){
@@ -1715,10 +3691,56 @@ function pollAutoStatus(){
       autoDrivingState.clearance_r = (d.clearance_right != null) ? d.clearance_right : 1.0;
       autoDrivingState.fps = d.fps || 0.0;
       autoDrivingState.overlay_enabled = d.show_overlay !== false;
+      autoDrivingState.destinations = d.destinations || {waypoints: [], active: null};
+      autoDrivingState.current_pose = d.current_pose || null;
+      autoDrivingState.last_obstacle_pose = d.last_obstacle_pose || null;
+
+      // Update 3D Spatial Map State
+      if (d.current_pose) spatialMapState.carPose = d.current_pose;
+      if (d.destinations) {
+        if (d.destinations.pose) spatialMapState.carPose = d.destinations.pose;
+        spatialMapState.destinations = d.destinations.waypoints || [];
+      }
+      if (d.servo_angle != null) spatialMapState.servoAngle = d.servo_angle;
+      spatialMapState.target = d.target_pin || null;
+      spatialMapState.obstacles = d.mapped_obstacles || [];
+      if (d.active_gaze_tracking != null) spatialMapState.gazeLocked = d.active_gaze_tracking;
+      updateSpatialHUD();
+
+      // Synchronize Live Camera HUD Reticle with Reprojected 3D World Pin
+      updateCameraTargetPinUI(d.target_pin);
+
+      if (d.gps && d.gps.latitude != null) {
+        var gpsEl = document.getElementById('gps-live-display');
+        if (gpsEl) {
+          gpsEl.innerHTML = 'Est GPS: <b>' + d.gps.latitude.toFixed(6) + ', ' + d.gps.longitude.toFixed(6) + '</b> • Pose (' + Math.round(d.gps.pose_x_cm) + ',' + Math.round(d.gps.pose_y_cm) + ')cm';
+        }
+      }
 
       var srv = d.server_ai || {};
       autoDrivingState.server_connected = !!srv.connected;
       autoDrivingState.server_latency = srv.latency_ms || 0;
+
+      if (d.control_mode) {
+        var isAi = d.control_mode === 'ai';
+        var txt = document.getElementById('control-mode-txt');
+        var manualBtn = document.getElementById('btn-manual-mode');
+        var aiBtn = document.getElementById('btn-ai-mode');
+        if (txt) txt.textContent = isAi ? 'AI CONTROL' : 'GAMEPAD / MANUAL';
+        if (manualBtn) manualBtn.classList.toggle('active', !isAi);
+        if (aiBtn) aiBtn.classList.toggle('active', isAi);
+      }
+
+      if (d.front_distance_cm !== undefined) {
+        updateUltrasonicUI(d.front_distance_cm);
+      }
+
+      if (d.lane_assist) {
+        autoDrivingState.lane_assist_enabled = !!d.lane_assist.enabled;
+      }
+      if (d.traffic_rules) {
+        autoDrivingState.traffic_rules_enabled = !!d.traffic_rules.enabled;
+      }
 
       updateAutoUI();
     }).catch(function(){});
@@ -1745,22 +3767,25 @@ function updateAutoUI(){
 
   // 2. Mode Badges
   var modeBadge = document.getElementById('auto-mode-badge');
-  if (modeBadge) modeBadge.textContent = 'MODE: ' + autoDrivingState.mode.toUpperCase();
+  if (modeBadge) {
+    var modeName = autoDrivingState.mode === 'local_ai' ? 'ON-BOARD AI' : autoDrivingState.mode.toUpperCase();
+    modeBadge.textContent = 'MODE: ' + modeName;
+  }
 
-  ['hybrid', 'local_ai', 'server_ai'].forEach(function(m){
-    var b = document.getElementById('btn-mode-' + (m === 'local_ai' ? 'local' : (m === 'server_ai' ? 'server' : 'hybrid')));
+  ['hybrid', 'local_ai', 'server_ai', 'paid_ai'].forEach(function(m){
+    var b = document.getElementById('btn-mode-' + (m === 'local_ai' ? 'local' : (m === 'server_ai' ? 'server' : (m === 'paid_ai' ? 'paid' : 'hybrid'))));
     if (b) b.classList.toggle('active', autoDrivingState.mode === m);
   });
 
-  // 3. Server Badge
+  // 3. Server Badge (hidden unless connected)
   var srvBadge = document.getElementById('auto-server-badge');
   if (srvBadge) {
     if (autoDrivingState.server_connected) {
+      srvBadge.style.display = 'inline-block';
       srvBadge.className = 'server-pill connected';
       srvBadge.textContent = 'EDGE SERVER: ACTIVE (' + autoDrivingState.server_latency + 'ms)';
     } else {
-      srvBadge.className = 'server-pill';
-      srvBadge.textContent = 'EDGE SERVER: STANDBY';
+      srvBadge.style.display = 'none';
     }
   }
 
@@ -1782,6 +3807,24 @@ function updateAutoUI(){
   // 5. Diagnostics
   var fpsEl = document.getElementById('auto-fps-badge');
   if (fpsEl) fpsEl.textContent = autoDrivingState.fps.toFixed(1) + ' FPS';
+
+  var poseEl = document.getElementById('auto-pose-badge');
+  if (poseEl && autoDrivingState.current_pose) {
+    var cp = autoDrivingState.current_pose;
+    poseEl.textContent = 'POSE: (' + Math.round(cp.x) + ',' + Math.round(cp.y) + ') ' + Math.round(cp.heading_deg) + '°';
+  }
+
+  var obsBanner = document.getElementById('auto-obs-pose-banner');
+  var obsVal = document.getElementById('auto-obs-pose-val');
+  if (obsBanner && obsVal) {
+    if (autoDrivingState.last_obstacle_pose) {
+      var op = autoDrivingState.last_obstacle_pose;
+      obsVal.textContent = '(' + Math.round(op.x) + ',' + Math.round(op.y) + ') ' + Math.round(op.heading_deg) + '° [' + (op.obstacle_class || 'OBSTACLE').toUpperCase() + ']';
+      obsBanner.style.display = 'flex';
+    } else {
+      obsBanner.style.display = 'none';
+    }
+  }
 
   var hazEl = document.getElementById('auto-haz-badge');
   if (hazEl) {
@@ -1825,16 +3868,172 @@ function updateAutoUI(){
   if (btnHudCam) {
     btnHudCam.classList.toggle('active', autoDrivingState.overlay_enabled);
   }
+
+  // 8. Assists & Traffic Rules Buttons & Badges
+  var btnLA = document.getElementById('btn-toggle-lane-assist');
+  var badgeLA = document.getElementById('auto-la-badge');
+  if (btnLA && autoDrivingState.lane_assist_enabled !== undefined) {
+    btnLA.classList.toggle('active', !!autoDrivingState.lane_assist_enabled);
+    btnLA.textContent = 'Lane Assist: ' + (autoDrivingState.lane_assist_enabled ? 'ON' : 'OFF');
+  }
+  if (badgeLA && autoDrivingState.lane_assist_enabled !== undefined) {
+    badgeLA.textContent = 'LANE: ' + (autoDrivingState.lane_assist_enabled ? 'ON' : 'OFF');
+    badgeLA.style.color = autoDrivingState.lane_assist_enabled ? '#007AFF' : 'var(--txt3)';
+  }
+
+  var btnTR = document.getElementById('btn-toggle-traffic-rules');
+  var badgeTR = document.getElementById('auto-tr-badge');
+  if (btnTR && autoDrivingState.traffic_rules_enabled !== undefined) {
+    btnTR.classList.toggle('active', !!autoDrivingState.traffic_rules_enabled);
+    btnTR.textContent = 'Traffic Rules: ' + (autoDrivingState.traffic_rules_enabled ? 'ON' : 'OFF');
+  }
+  if (badgeTR && autoDrivingState.traffic_rules_enabled !== undefined) {
+    badgeTR.textContent = 'RULES: ' + (autoDrivingState.traffic_rules_enabled ? 'ON' : 'OFF');
+    badgeTR.style.color = autoDrivingState.traffic_rules_enabled ? '#007AFF' : 'var(--txt3)';
+  }
+
+  var destinationStatus = document.getElementById('destination-status');
+  if (destinationStatus) {
+    var points = (autoDrivingState.destinations && autoDrivingState.destinations.waypoints) || [];
+    var active = autoDrivingState.destinations && autoDrivingState.destinations.active;
+    destinationStatus.textContent = points.length
+      ? points.length + ' registered' + (active ? ' • next: ' + active.label : ' • route complete')
+      : 'No destinations registered';
+  }
+}
+
+function addDestination(){
+  var x = parseFloat(document.getElementById('destination-x').value);
+  var y = parseFloat(document.getElementById('destination-y').value);
+  var label = (document.getElementById('destination-label').value || '').trim();
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    setMsg('Enter finite X and Y coordinates', 'warn');
+    return;
+  }
+  fetch('/api/auto/destinations', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({x:x, y:y, label:label})
+  }).then(function(r){return r.json();})
+    .then(function(d){
+      if (d.status !== 'success') throw new Error(d.message || 'Destination rejected');
+      autoDrivingState.destinations = d.destinations;
+      document.getElementById('destination-label').value = '';
+      if (typeof applyControlModeUI === 'function') applyControlModeUI(true);
+      setMsg('Destination registered — select AI to start the route', 'ok');
+      if (d.front_distance_cm !== undefined) {
+        updateUltrasonicUI(d.front_distance_cm);
+      }
+
+      if (d.lane_assist) {
+        autoDrivingState.lane_assist_enabled = !!d.lane_assist.enabled;
+      }
+      if (d.traffic_rules) {
+        autoDrivingState.traffic_rules_enabled = !!d.traffic_rules.enabled;
+      }
+
+      updateAutoUI();
+    }).catch(function(e){setMsg(e.message || 'Destination failed', 'warn');});
+}
+
+function clearDestinations(){
+  fetch('/api/auto/destinations', {method: 'DELETE'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      autoDrivingState.destinations = d.destinations || {waypoints: [], active: null};
+      setMsg('Destinations cleared', 'ok');
+      if (d.front_distance_cm !== undefined) {
+        updateUltrasonicUI(d.front_distance_cm);
+      }
+
+      if (d.lane_assist) {
+        autoDrivingState.lane_assist_enabled = !!d.lane_assist.enabled;
+      }
+      if (d.traffic_rules) {
+        autoDrivingState.traffic_rules_enabled = !!d.traffic_rules.enabled;
+      }
+
+      updateAutoUI();
+    }).catch(function(){setMsg('Could not clear destinations', 'warn');});
+}
+
+function plotGpsTarget() {
+  var lat = parseFloat(document.getElementById('gps-target-lat').value);
+  var lon = parseFloat(document.getElementById('gps-target-lon').value);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    setMsg('Enter valid numeric Latitude and Longitude', 'warn');
+    return;
+  }
+  fetch('/api/auto/target_gps', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({latitude: lat, longitude: lon, label: 'GPS Target'})
+  }).then(function(r){return r.json();})
+    .then(function(d){
+      if (d.status === 'success' && d.target_pin) {
+        spatialMapState.target = d.target_pin;
+        updateCameraTargetPinUI(d.target_pin);
+        if (typeof applyControlModeUI === 'function') applyControlModeUI(true);
+        updateSpatialHUD();
+        setMsg('🎯 GPS Target Plotted: (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ') — Auto Navigating', 'ok');
+      }
+    }).catch(function(){setMsg('GPS target plotting failed', 'warn');});
+}
+
+function useDeviceGpsForOrigin() {
+  if (!navigator.geolocation) {
+    setMsg('Geolocation not supported on this browser', 'warn');
+    return;
+  }
+  setMsg('Querying Device Geolocation...', 'ok');
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var lat = pos.coords.latitude;
+    var lon = pos.coords.longitude;
+    var elLat = document.getElementById('gps-target-lat');
+    var elLon = document.getElementById('gps-target-lon');
+    if (elLat) elLat.value = lat.toFixed(6);
+    if (elLon) elLon.value = lon.toFixed(6);
+
+    fetch('/api/auto/gps_origin', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({latitude: lat, longitude: lon})
+    }).then(function(r){return r.json();})
+      .then(function(){
+        setMsg('✓ Car GPS Origin Calibrated to (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')', 'ok');
+      }).catch(function(){setMsg('Failed to set GPS origin', 'warn');});
+  }, function(err) {
+    setMsg('GPS access denied: ' + err.message, 'warn');
+  }, {enableHighAccuracy: true, timeout: 10000});
+}
+
+function applyControlModeUI(isAi) {
+  autoDrivingState.enabled = isAi;
+  var txt = document.getElementById('control-mode-txt');
+  var manualBtn = document.getElementById('btn-manual-mode');
+  var aiBtn = document.getElementById('btn-ai-mode');
+  if (txt) txt.textContent = isAi ? 'AI CONTROL' : 'GAMEPAD / MANUAL';
+  if (manualBtn) manualBtn.classList.toggle('active', !isAi);
+  if (aiBtn) aiBtn.classList.toggle('active', isAi);
+  updateAutoUI();
 }
 
 function toggleAutoDrive(){
-  fetch('/api/auto/toggle', {method: 'POST'})
+  setControlMode(autoDrivingState.enabled ? 'manual' : 'ai');
+}
+
+function setControlMode(mode){
+  fetch('/api/control/mode', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mode: mode})
+  })
     .then(function(r){return r.json();})
     .then(function(d){
-      autoDrivingState.enabled = !!d.autonomous_enabled;
-      setMsg(autoDrivingState.enabled ? '✓ Autonomous Mode Engaged' : 'Manual Mode Active', 'ok');
-      updateAutoUI();
-    }).catch(function(){});
+      if (d.status !== 'success') throw new Error(d.message || 'Mode change failed');
+      applyControlModeUI(d.control_mode === 'ai');
+      setMsg(autoDrivingState.enabled ? '✓ AI Mode Engaged' : 'Gamepad / Manual Mode Active', 'ok');
+    }).catch(function(){setMsg('Mode change failed');});
 }
 
 function setAutoMode(mode){
@@ -1846,6 +4045,17 @@ function setAutoMode(mode){
     .then(function(d){
       autoDrivingState.mode = d.mode;
       setMsg('Mode: ' + d.mode.toUpperCase(), 'ok');
+      if (d.front_distance_cm !== undefined) {
+        updateUltrasonicUI(d.front_distance_cm);
+      }
+
+      if (d.lane_assist) {
+        autoDrivingState.lane_assist_enabled = !!d.lane_assist.enabled;
+      }
+      if (d.traffic_rules) {
+        autoDrivingState.traffic_rules_enabled = !!d.traffic_rules.enabled;
+      }
+
       updateAutoUI();
     }).catch(function(){});
 }
@@ -1870,6 +4080,17 @@ function toggleHudOverlay(){
     .then(function(d){
       autoDrivingState.overlay_enabled = !!d.overlay_enabled;
       setMsg('AI HUD Overlay: ' + (d.overlay_enabled ? 'ON' : 'OFF'), 'ok');
+      if (d.front_distance_cm !== undefined) {
+        updateUltrasonicUI(d.front_distance_cm);
+      }
+
+      if (d.lane_assist) {
+        autoDrivingState.lane_assist_enabled = !!d.lane_assist.enabled;
+      }
+      if (d.traffic_rules) {
+        autoDrivingState.traffic_rules_enabled = !!d.traffic_rules.enabled;
+      }
+
       updateAutoUI();
     }).catch(function(){});
 }
@@ -1893,6 +4114,52 @@ function saveServerUrl(){
   }).catch(function(){});
 }
 
+function toggleLaneAssist(forceState){
+  var payload = {};
+  if (forceState !== undefined) {
+    payload.enabled = !!forceState;
+  } else if (autoDrivingState.lane_assist_enabled !== undefined) {
+    payload.enabled = !autoDrivingState.lane_assist_enabled;
+  }
+  fetch('/api/lane_assist/toggle', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.status === 'success') {
+      autoDrivingState.lane_assist_enabled = !!d.enabled;
+      setMsg('Lane Assist: ' + (d.enabled ? 'ON' : 'OFF'), 'ok');
+      updateAutoUI();
+      pollAutoStatus();
+    }
+  }).catch(function(){});
+}
+
+function toggleTrafficRules(forceState){
+  var payload = {};
+  if (forceState !== undefined) {
+    payload.enabled = !!forceState;
+  } else if (autoDrivingState.traffic_rules_enabled !== undefined) {
+    payload.enabled = !autoDrivingState.traffic_rules_enabled;
+  }
+  fetch('/api/traffic_rules/toggle', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.status === 'success') {
+      autoDrivingState.traffic_rules_enabled = !!d.enabled;
+      setMsg('Traffic Rules: ' + (d.enabled ? 'ON' : 'OFF'), 'ok');
+      updateAutoUI();
+      pollAutoStatus();
+    }
+  }).catch(function(){});
+}
+
 // Global shortcut: Key [Z] toggles Auto Drive, [Spacebar] Emergency Stops
 window.addEventListener('keydown', function(e){
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
@@ -1905,8 +4172,90 @@ window.addEventListener('keydown', function(e){
 pollAutoStatus();
 setInterval(pollAutoStatus, 400);
 
+initSpatialMap();
+
 loadGallery();
 setInterval(loadGallery,15000);
+
+
+/* ── WORKSPACE VIEW TABS FILTER ──────────────────────── */
+function switchViewTab(tabName) {
+  var validTabs = ['all', 'vision', 'cockpit', 'autonomy', 'hardware', 'media'];
+  if (validTabs.indexOf(tabName) === -1) tabName = 'all';
+
+  try {
+    localStorage.setItem('rc_active_workspace_tab', tabName);
+  } catch(e) {}
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+  });
+
+  var cards = {
+    'cam': document.querySelector('.a-cam'),
+    'map': document.querySelector('.a-map'),
+    'stat': document.querySelector('.a-stat'),
+    'servo': document.querySelector('.a-servo'),
+    'auto': document.querySelector('.a-auto'),
+    'ctrl': document.querySelector('.a-ctrl'),
+    'mobile': document.querySelector('.mobile-dock')
+  };
+
+  // Reset visibility
+  Object.keys(cards).forEach(function(k){
+    if (cards[k]) cards[k].classList.remove('tab-hidden');
+  });
+
+  if (tabName === 'all') {
+    // Show all
+  } else if (tabName === 'vision') {
+    if (cards.stat) cards.stat.classList.add('tab-hidden');
+    if (cards.servo) cards.servo.classList.add('tab-hidden');
+    if (cards.auto) cards.auto.classList.add('tab-hidden');
+    if (cards.ctrl) cards.ctrl.classList.add('tab-hidden');
+    if (cards.mobile) cards.mobile.classList.add('tab-hidden');
+  } else if (tabName === 'cockpit') {
+    if (cards.map) cards.map.classList.add('tab-hidden');
+    if (cards.auto) cards.auto.classList.add('tab-hidden');
+  } else if (tabName === 'autonomy') {
+    if (cards.stat) cards.stat.classList.add('tab-hidden');
+    if (cards.servo) cards.servo.classList.add('tab-hidden');
+    if (cards.ctrl) cards.ctrl.classList.add('tab-hidden');
+  } else if (tabName === 'hardware') {
+    if (cards.cam) cards.cam.classList.add('tab-hidden');
+    if (cards.map) cards.map.classList.add('tab-hidden');
+    if (cards.auto) cards.auto.classList.add('tab-hidden');
+  } else if (tabName === 'media') {
+    if (cards.map) cards.map.classList.add('tab-hidden');
+    if (cards.stat) cards.stat.classList.add('tab-hidden');
+    if (cards.servo) cards.servo.classList.add('tab-hidden');
+    if (cards.auto) cards.auto.classList.add('tab-hidden');
+  }
+
+  // Trigger resize on canvases so they match new layout widths
+  setTimeout(function(){
+    if (typeof resizeSpatialCanvas === 'function') resizeSpatialCanvas();
+  }, 100);
+}
+
+// Restore saved workspace tab
+try {
+  var _savedTab = localStorage.getItem('rc_active_workspace_tab') || 'all';
+  switchViewTab(_savedTab);
+} catch(e) {}
+
+// Master Emergency Stop Function
+function masterEmergencyStop() {
+  rel();
+  fetch('/api/safety/emergency_stop', {method: 'POST'}).catch(function(){});
+  setMsg('⚠️ EMERGENCY STOP ENGAGED — ALL ACTUATORS HALTED', 'error');
+  var b = document.getElementById('btn-master-estop');
+  if (b) {
+    b.classList.add('flashing');
+    setTimeout(function(){ b.classList.remove('flashing'); }, 1200);
+  }
+}
+
 </script>
 </body>
 </html>

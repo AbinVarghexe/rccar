@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RCCar Autonomous Dashboard
+Comment=Launch Cyber-Deck Dashboard on Boot
+Exec=/bin/bash /home/alfin/autonomous_car/scripts/autostart_browser.sh
+Terminal=false
+StartupNotify=false
+Categories=Utility;Application;

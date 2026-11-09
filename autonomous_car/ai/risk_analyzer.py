@@ -1,7 +1,7 @@
 import time
 import logging
 from typing import Dict, List, Tuple
-from autonomous_car.ai.classes import DetectionResult, BoundingBox
+from ai.classes import DetectionResult, BoundingBox
 
 logger = logging.getLogger(__name__)
 

@@ -11,8 +11,11 @@ import time
 import threading
 from enum import Enum
 from typing import Optional, Tuple
-import serial
-import serial.tools.list_ports
+try:
+    import serial
+    import serial.tools.list_ports
+except ImportError:
+    serial = None
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(curr_dir)
@@ -34,6 +37,8 @@ class VehicleCommand(str, Enum):
     LEFT = "LEFT"
     RIGHT = "RIGHT"
     STOP = "STOP"
+    STANDBY = "STANDBY"
+    RESUME = "RESUME"
 
 class SerialCommunicator:
     def __init__(self, config: SerialConfig) -> None:

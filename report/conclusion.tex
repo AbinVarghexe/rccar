@@ -1,0 +1,17 @@
+\chapter{CONCLUSION AND FUTURE WORK}
+
+\section{Conclusion}
+This project successfully designed, developed, and experimentally validated an integrated Edge-AI Autonomous RC Car architecture capable of real-time lane navigation, multi-sector corridor scanning, and deterministic collision avoidance. By executing all computational tasks natively on a single Raspberry Pi single-board computer, the platform eliminates the critical vulnerability of remote wireless offloading, providing self-contained, offline operational autonomy.
+
+The multi-stage perception pipeline demonstrates that lightweight, INT8-quantized deep learning models can operate synergistically with classical computer vision techniques on low-power hardware. The LiteRT-based YOLOv8 Nano model achieves bounded inference latencies of approximately 106.4~ms, delivering accurate semantic context, while the high-speed 30~FPS centroid lane detector and multi-sector corridor scanner guarantee responsive lateral guidance. 
+
+The integration of dual ultrasonic sensors with an independent Safety Arbiter and an active 0.6-second watchdog timer establishes a fail-safe operational envelope, achieving 100\% collision prevention in physical stopping trials. Concurrently, the dual wireless teleoperation interface provides responsive, low-latency video streaming and manual supervisory intervention. In summary, the project presents a reliable, modular, and economically accessible testbed that advances the state of embedded robotics and autonomous ground vehicular research.
+
+\section{Future Work}
+Building upon the verified architecture, future investigations will focus on the following key areas:
+\begin{itemize}
+    \item \textbf{Sensor Fusion with Solid-State LiDAR:} Integrating a compact 2D or 3D LiDAR unit to augment the ultrasonic sensors, eliminating acoustic specular reflections and providing a 360-degree high-resolution spatial occupancy grid.
+    \item \textbf{Inertial Odometry and Closed-Loop Kinematics:} Equipping the drive train with dual hall-effect rotary wheel encoders and an MPU-6050 6-DoF inertial measurement unit to implement closed-loop PID velocity control and extended Kalman filter (EKF) dead-reckoning.
+    \item \textbf{Hardware Neural Acceleration:} Incorporating a dedicated hardware NPU or Edge TPU via USB 3.0 to accelerate convolutional neural tensor operations, enabling concurrent multi-camera perception and end-to-end behavioral cloning.
+    \item \textbf{Autonomous Dynamic Path Planning:} Expanding the Navigation State Machine to incorporate global graph-search algorithms (such as Hybrid A* or Rapidly-exploring Random Trees) for multi-waypoint indoor navigation across complex building floorplans.
+\end{itemize}
